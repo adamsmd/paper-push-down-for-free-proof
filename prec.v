@@ -1215,6 +1215,27 @@ Parameter alloc_hat_ordering: forall σ_sub_hat σ_hat,
     alloc_hat x (c_hat, σ_hat).
 *)
 
+(*
+Lemma alloc_hat_ordering' {ξ_hat ξ'_hat c_hat c'_hat σ'_hat σ'_κ_hat x}:
+  @Ξ_hat_wf ξ_hat ξ'_hat ->
+  step_Σ_hat (c_hat, ξ_hat.2) (c'_hat, (σ'_hat, σ'_κ_hat)) ->
+  ξ_hat.1 c_hat ->
+  c'_hat.1.2 x = alloc_hat x (c_hat, ξ_hat.2) ->
+(*  σ'_hat (alloc_hat x (c_hat, ξ_hat.2)) clo_hat ->*)
+(*  (step_Ξ_hat ξ'_hat).2.1 (alloc_hat x (c_hat, ξ'_hat.2)) clo_hat ->*)
+  alloc_hat x (c_hat, ξ_hat.2) =
+  alloc_hat x (c_hat, ξ'_hat.2).
+Proof.
+move => H_wf H_step H_c_til H_eq.
+
+case E: (Ξ_til_wf_ξ H_wf) => [H|[[ξ_pre_til H1] H2]].
+
+by rewrite H.1 H.2.
+
+rewrite -H2.
+apply (alloc_til_ordering H1 H_step H_c_til H_eq (x:=x)).
+Qed.
+*)
 
 (************************************)
 (*** step_Ξ_til is monotonic for  ***)
@@ -1259,8 +1280,7 @@ rewrite -/c_mid_til.
 
 rewrite -H13 in H_step.
 rewrite -{3}H12.
-have: σ_til = ξ_til.2.1.
-admit.
+have: σ_til = ξ_til.2.1 by rewrite -H12.
 move => {3}->.
 rewrite (alloc_κ_til_ordering' H_wf H_step); try done.
 
@@ -1270,8 +1290,7 @@ rewrite (alloc_til_ordering' H_wf H_step); try done.
 move => //=.
 by rewrite /ρ_extend /eq_Var (eq_bool_correct.1.2); try done; rewrite -H12.
 rewrite H12.
-have: σ_til = ξ_til.2.1.
-admit.
+have: σ_til = ξ_til.2.1 by rewrite -H12.
 move => ->.
 done.
 
@@ -1711,8 +1730,7 @@ rewrite -H7.
 rewrite -/c_mid_til.
 rewrite H6.
 
-have: σ_til = ξ_til.2.1.
-admit.
+have: σ_til = ξ_til.2.1 by rewrite -H6.
 move => ->.
 
 rewrite (surjective_pairing c_pre_til) (surjective_pairing c_pre_til.1) -H7 //= in H_step.
@@ -1726,8 +1744,7 @@ suff: alloc_til x' (c_mid_til, ξ_til.2) = alloc_til x' (c_mid_til, ξ'_til.2).
 move => ->.
 apply.
 
-have: σ_til = ξ_til.2.1.
-admit.
+have: σ_til = ξ_til.2.1 by rewrite -H6.
 move => HH.
 
 rewrite HH in H0.
@@ -1768,8 +1785,7 @@ rewrite (σ_extend_ind eq_KAddr_til ξ'_til.2.2 σ_κ_til).
 rewrite (σ_extend_ind eq_Addr_til ξ'_til.2.1 σ_til).
 rewrite -H7 -/c_mid_til in H_step.
 rewrite -{2}H6.
-have: σ_til = ξ_til.2.1.
-admit.
+have: σ_til = ξ_til.2.1 by rewrite -H6.
 move => {2}->.
 rewrite -(alloc_κ_til_ordering' H_wf H_step); try done.
 rewrite -H6 //=.
@@ -1802,8 +1818,27 @@ exists  (σ_extend eq_Addr_til ξ'_til.2.1
         (fun (_ : KAddr_til) (_ : Kont_til) => False).
 do ?split.
 rewrite //=.
-admit.
-admit.
+rewrite /substore /subseteq /step_Ξ_til //=; pairs.
+move => a_til clo_til HH.
+exists (κ'_til.1.1.2,
+        ρ_extend κ'_til.1.2 κ'_til.1.1.1
+          (alloc_til κ'_til.1.1.1 (Ret ae, ρ_pre_til, a_κ_pre_til, ξ'_til.2)),
+        κ'_til.2,
+        (σ_extend eq_Addr_til ξ'_til.2.1
+           (alloc_til κ'_til.1.1.1 (Ret ae, ρ_pre_til, a_κ_pre_til, ξ'_til.2))
+           (A_til ae ρ_pre_til ξ'_til.2.1),
+        fun (_ : KAddr_til) (_ : Kont_til) => False)).
+split.
+right.
+exists c_mid_til.
+split.
+by move: (Ξ_til_wf_r_sub H_wf _ H_c_mid_til).
+move: (step_Σ_til_Ret ae ρ_pre_til a_κ_pre_til ξ'_til.2.1 ξ'_til.2.2 κ'_til.1.1.1 κ'_til.1.1.2 κ'_til.1.2 κ'_til.2).
+rewrite /step_Σ_til_Ret_func; pairs.
+apply.
+by move: (Ξ_til_wf_σ_κ_sub H_wf _ _ H_κ_til).
+by rewrite //=.
+by rewrite //= /substore /subseteq.
 rewrite //=.
 rewrite -/x -/e' -/ρ_κ_til -/a'_κ_til -/c_mid_til.
 suff: (alloc_til x (c_mid_til, ξ'_til.2)) = (alloc_til x (c_mid_til, ξ_til.2)).
@@ -2285,6 +2320,7 @@ rewrite /C_til_hat //=.
 rewrite (alloc_til_ordering' H_wf H); try done.
 rewrite (ρ_extend_til_hat _ _ _ (κ'_til :: κs_til)).
 rewrite /c_mid_til /C_til_hat //= H_κ'_til /compose /Frame_til_hat //=.
+move: (prec_Store_bij.2).
 admit. (* NEEDS alloc_hat_ordering
 by rewrite (alloc_hat_ordering (Store_til_hat ξ'_til.2.1) ξ_hat.2).*)
 (*move: (paths_have_stacks H_wf H_path_til) => //=.*)
