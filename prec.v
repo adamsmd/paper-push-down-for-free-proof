@@ -591,30 +591,34 @@ Inductive step_Σ_til : Σ_til -> Σ_til -> Prop :=
     (step_Σ_til_Ret_func ae ρ_til a_κ_til σ_til σ_κ_til x e' ρ_κ_til a'_κ_til).
 
 Definition step_Σ_sub_til ϛ_til ϛ'_til :=
+  exists σ'_til σ'_κ_til,
+    σ'_til ⊑ ϛ'_til.2.1 /\
+    σ'_κ_til ⊑ ϛ'_til.2.2 /\
+    step_Σ_til ϛ_til (ϛ'_til.1, (σ'_til, σ'_κ_til)).
+
+(*
+Definition step_Σ_sub_til ϛ_til ϛ'_til :=
   exists σ_til σ_κ_til σ'_til σ'_κ_til,
     σ_til ⊑ ϛ_til.2.1 /\
     σ_κ_til ⊑ ϛ_til.2.2 /\
     σ'_til ⊑ ϛ'_til.2.1 /\
     σ'_κ_til ⊑ ϛ'_til.2.2 /\
     step_Σ_til (ϛ_til.1, (σ_til, σ_κ_til)) (ϛ'_til.1, (σ'_til, σ'_κ_til)).
+*)
 
 Definition step_Σ_sub_clo_til a_til clo_til ϛ_til ϛ'_til :=
-  exists σ_til σ_κ_til σ'_til σ'_κ_til,
-    σ_til ⊑ ϛ_til.2.1 /\
-    σ_κ_til ⊑ ϛ_til.2.2 /\
+  exists σ'_til σ'_κ_til,
     σ'_til ⊑ ϛ'_til.2.1 /\
     σ'_κ_til ⊑ ϛ'_til.2.2 /\
     σ'_til a_til clo_til /\
-    step_Σ_til (ϛ_til.1, (σ_til, σ_κ_til)) (ϛ'_til.1, (σ'_til, σ'_κ_til)).
+    step_Σ_til ϛ_til (ϛ'_til.1, (σ'_til, σ'_κ_til)).
 
 Definition step_Σ_sub_κ_til a_κ_til κ_til ϛ_til ϛ'_til :=
-  exists σ_til σ_κ_til σ'_til σ'_κ_til,
-    σ_til ⊑ ϛ_til.2.1 /\
-    σ_κ_til ⊑ ϛ_til.2.2 /\
+  exists σ'_til σ'_κ_til,
     σ'_til ⊑ ϛ'_til.2.1 /\
     σ'_κ_til ⊑ ϛ'_til.2.2 /\
     σ'_κ_til a_κ_til κ_til /\
-    step_Σ_til (ϛ_til.1, (σ_til, σ_κ_til)) (ϛ'_til.1, (σ'_til, σ'_κ_til)).
+    step_Σ_til ϛ_til (ϛ'_til.1, (σ'_til, σ'_κ_til)).
 
 Definition step_Ξ_til ξ_til : Ξ_til :=
   let: (r_til, (σ_til, σ_κ_til)) := ξ_til in
@@ -635,10 +639,10 @@ Lemma step_Σ_sub_clo_til_weakening {a_til clo_til ϛ_til ϛ'_til}:
   step_Σ_sub_til ϛ_til ϛ'_til.
 Proof.
 rewrite /step_Σ_sub_clo_til /step_Σ_sub_til.
-move => [σ_til] [σ_κ_til] [σ'_til] [σ'_κ_til] H.
-exists σ_til σ_κ_til σ'_til σ'_κ_til.
+move => [σ'_til] [σ'_κ_til] H.
+exists σ'_til σ'_κ_til.
 move: H.
-do 5(case => ?).
+do 3(case => ?).
 by do ?split.
 Qed.
 
@@ -647,13 +651,12 @@ Lemma step_Σ_sub_κ_til_weakening {a_κ_til κ_til ϛ_til ϛ'_til}:
   step_Σ_sub_til ϛ_til ϛ'_til.
 Proof.
 rewrite /step_Σ_sub_κ_til /step_Σ_sub_til.
-move => [σ_til] [σ_κ_til] [σ'_til] [σ'_κ_til] H.
-exists σ_til σ_κ_til σ'_til σ'_κ_til.
+move => [σ'_til] [σ'_κ_til] H.
+exists σ'_til σ'_κ_til.
 move: H.
-do 5(case => ?).
+do 3(case => ?).
 by do ?split.
 Qed.
-
 
 (******************)
 (*** Allocation ***)
@@ -691,30 +694,6 @@ Parameter prec_alloc: forall x ϛ_hat ϛ_til,
   (∃κs_til ∈ stacks ϛ_til.2.2 ϛ_til.1.2, Konts_til_hat κs_til = ϛ_hat.1.2) ->
   prec_Store ϛ_hat.2 ϛ_til.2.1 ->
   prec_Addr (alloc_hat x ϛ_hat) (alloc_til x ϛ_til).
-
-(* TODO: these are over-strong assumptions, but generalizing them
-requires changing the definition of paths to use two ξ.  For
-now we go with these until we can rewrite the proof to use
-such a new definition of paths.  Once we do that it would be
-something like:
-  @Ξ_til_wf ξ_til -> step_Ξ_til ξ_til ξ'_til ->
-  ξ_til.1 c_til -> ξ'_til.1 c_til ->
-  alloc_til x (c_til, ξ_til.2) -> alloc_til x (c_til, ξ'_til.2)
-*)
-Parameter alloc_til_ordering: forall σ_sub_til σ_κ_sub_til σ_til σ_κ_til,
-  forall x c_til,
-    alloc_til x (c_til, (σ_sub_til, σ_κ_sub_til)) =
-    alloc_til x (c_til, (σ_til, σ_κ_til)).
-
-Parameter alloc_κ_til_ordering: forall σ_sub_til σ_κ_sub_til σ'_sub_til σ_til σ_κ_til σ'_til,
-  forall c_til e ρ_til,
-    alloc_κ_til (c_til, (σ_sub_til, σ_κ_sub_til)) e ρ_til σ'_sub_til =
-    alloc_κ_til (c_til, (σ_til, σ_κ_til)) e ρ_til σ'_til.
-
-Parameter alloc_hat_ordering: forall σ_sub_hat σ_hat,
-  forall x c_hat,
-    alloc_hat x (c_hat, σ_sub_hat) =
-    alloc_hat x (c_hat, σ_hat).
 
 
 (***********************************)
@@ -939,17 +918,18 @@ Inductive path_hat ξ_hat c_hat : C_hat -> Prop :=
     step_Σ_sub_hat (c_mid_hat, ξ_hat.2) (c'_hat, ξ_hat.2) ->
     path_hat ξ_hat c_hat c'_hat).
 
-Inductive path_til ξ_til c_til κs_til : C_til -> list Kont_til -> Prop :=
-| path_til_nil : ξ_til.1 c_til ->
-                 stacks ξ_til.2.2 c_til.2 κs_til ->
-                 path_til ξ_til c_til κs_til c_til κs_til
-| path_til_Let x f ae b ρ_mid_til a_κ_mid_til: ∀c'_til ∈ ξ_til.1, forall κs'_til,
+Inductive path_til ξ_til ξ'_til c_til κs_til : C_til -> list Kont_til -> Prop :=
+| path_til_nil : ξ'_til.1 c_til ->
+                 stacks ξ'_til.2.2 c_til.2 κs_til ->
+                 path_til ξ_til ξ'_til c_til κs_til c_til κs_til
+| path_til_Let x f ae b ρ_mid_til a_κ_mid_til: ∀c'_til ∈ ξ'_til.1, forall κs'_til,
     let c_mid_til := (Let x f ae b, ρ_mid_til, a_κ_mid_til) in
     let κ_til := (x, b, ρ_mid_til, a_κ_mid_til) in
-    path_til ξ_til c_til κs_til c_mid_til κs'_til ->
-    ξ_til.2.2 c'_til.2 κ_til ->
-    step_Σ_sub_til (c_mid_til, ξ_til.2) (c'_til, ξ_til.2) ->
-    path_til ξ_til c_til κs_til c'_til (κ_til :: κs'_til)
+    path_til ξ_til ξ'_til c_til κs_til c_mid_til κs'_til ->
+    ξ_til.1 c_mid_til ->
+    ξ'_til.2.2 c'_til.2 κ_til ->
+    step_Σ_sub_til (c_mid_til, ξ_til.2) (c'_til, ξ'_til.2) ->
+    path_til ξ_til ξ'_til c_til κs_til c'_til (κ_til :: κs'_til)
 | path_til_Ret ae ρ_mid_til a_κ_mid_til: forall κ'_til κs'_til,
     let c_mid_til := (Ret ae, ρ_mid_til, a_κ_mid_til) in
     let x := κ'_til.1.1.1 in
@@ -957,14 +937,15 @@ Inductive path_til ξ_til c_til κs_til : C_til -> list Kont_til -> Prop :=
     let ρ_κ_til := κ'_til.1.2 in
     let a'_κ_til := κ'_til.2 in
     let c'_til := (e', ρ_extend ρ_κ_til x (alloc_til x (c_mid_til, ξ_til.2)), a'_κ_til) in
-    ξ_til.1 c'_til ->
-    path_til ξ_til c_til κs_til c_mid_til (κ'_til :: κs'_til) ->
+    ξ'_til.1 c'_til ->
+    path_til ξ_til ξ'_til c_til κs_til c_mid_til (κ'_til :: κs'_til) ->
+    ξ_til.1 c_mid_til ->
     ξ_til.2.2 a_κ_mid_til κ'_til ->
-    step_Σ_sub_til (c_mid_til, ξ_til.2) (c'_til, ξ_til.2) ->
-    path_til ξ_til c_til κs_til c'_til κs'_til.
+    step_Σ_sub_til (c_mid_til, ξ_til.2) (c'_til, ξ'_til.2) ->
+    path_til ξ_til ξ'_til c_til κs_til c'_til κs'_til.
 
-Notation "x ⟶^ y [ e ]" := (path_hat e x y) (at level 70, no associativity).
-Notation "x / y ⟶~ z / w [ e ]" := (path_til e x y z w) (at level 70, no associativity).
+Notation "x ⟶^ y [ e ; e2 ]" := (path_hat e e2 x y) (at level 70, no associativity).
+Notation "x / y ⟶~ z / w [ e ; e2 ]" := (path_til e e2 x y z w) (at level 70, no associativity).
 
 Lemma path_start_hat {ξ_hat c_hat c'_hat}:
   path_hat ξ_hat c_hat c'_hat -> ξ_hat.1 c_hat.
@@ -974,12 +955,12 @@ Lemma path_end_hat {ξ_hat c_hat c'_hat}:
   path_hat ξ_hat c_hat c'_hat -> ξ_hat.1 c'_hat.
 Proof. by elim. Qed.
 
-Lemma path_start_til {ξ_til c_til κs_til c'_til κs'_til}:
-  path_til ξ_til c_til κs_til c'_til κs'_til -> ξ_til.1 c_til.
+Lemma path_start_til {ξ_til ξ'_til c_til κs_til c'_til κs'_til}:
+  path_til ξ_til ξ'_til c_til κs_til c'_til κs'_til -> ξ'_til.1 c_til.
 Proof. by elim. Qed.
 
-Lemma path_end_til {ξ_til c_til κs_til c'_til κs'_til}:
-  path_til ξ_til c_til κs_til c'_til κs'_til -> ξ_til.1 c'_til.
+Lemma path_end_til {ξ_til ξ'_til c_til κs_til c'_til κs'_til}:
+  path_til ξ_til ξ'_til c_til κs_til c'_til κs'_til -> ξ'_til.1 c'_til.
 Proof. by elim. Qed.
 
 Fixpoint κs_last_addr a_κ_til (κs_til : list Kont_til) := match κs_til with
@@ -987,18 +968,18 @@ Fixpoint κs_last_addr a_κ_til (κs_til : list Kont_til) := match κs_til with
 | cons (_, a_κ_til) κs_til => κs_last_addr a_κ_til κs_til
 end.
 
-Lemma path_append_til {ξ_til c_0_til κs0_til c_1_til κs1_til c_2_til κs2_til}:
-  path_til ξ_til c_0_til κs0_til c_1_til κs1_til ->
-  path_til ξ_til c_1_til κs1_til c_2_til κs2_til ->
-  path_til ξ_til c_0_til κs0_til c_2_til κs2_til.
+Lemma path_append_til {ξ_til ξ'_til c_0_til κs0_til c_1_til κs1_til c_2_til κs2_til}:
+  path_til ξ_til ξ'_til c_0_til κs0_til c_1_til κs1_til ->
+  path_til ξ_til ξ'_til c_1_til κs1_til c_2_til κs2_til ->
+  path_til ξ_til ξ'_til c_0_til κs0_til c_2_til κs2_til.
 Proof.
 move => H_path_1 H_path_2.
 elim E: H_path_2 => [|x f ae b|].
 by [].
 move => H1 H2 H3 H4.
-apply: (path_til_Let _ _ _ x f ae b); try done.
+apply (path_til_Let _ _ _ _ x f ae b); try done.
 move => //= H1 H2 H3 H4 H5.
-apply: (path_til_Ret); try done.
+apply (path_til_Ret); try done.
 Qed.
 
 
@@ -1006,30 +987,35 @@ Qed.
 (*** Well-formedness ***)
 (***********************)
 
-Record Ξ_til_wf {ξ_til} : Prop := mk_Ξ_til_wf {
-  Ξ_til_wf_c_0: ξ_til.1 c_0_til;
-  Ξ_til_wf_a_κ_0 κ_til: ~ξ_til.2.2 a_κ_0_til κ_til;
+Inductive Ξ_til_wf {ξ_til ξ'_til} : Prop := mk_Ξ_til_wf {
+  Ξ_til_wf_ξ: ξ'_til = ξ_0_til \/
+              (exists ξ_pre_til, @Ξ_til_wf ξ_pre_til ξ_til) /\ step_Ξ_til ξ_til = ξ'_til;
+  Ξ_til_wf_substore: ξ_til.2.1 ⊑ ξ'_til.2.1;
+  Ξ_til_wf_c_0: ξ'_til.1 c_0_til;
+  Ξ_til_wf_a_κ_0 κ_til: ~ξ'_til.2.2 a_κ_0_til κ_til;
   Ξ_til_wf_r:
-    ∀c_til ∈ ξ_til.1,
-    ∃κs_til ∈ stacks ξ_til.2.2 c_til.2,
-      path_til ξ_til c_0_til nil c_til κs_til;
+    ∀c_til ∈ ξ'_til.1,
+    ∃κs_til ∈ stacks ξ'_til.2.2 c_til.2,
+      path_til ξ_til ξ'_til c_0_til nil c_til κs_til;
   Ξ_til_wf_σ:
-    ∀a_til ↦ clo_til ∈ ξ_til.2.1,
+    ∀a_til ↦ clo_til ∈ ξ'_til.2.1,
       ∃c_til ∈ ξ_til.1,
-      ∃c'_til ∈ ξ_til.1,
-        step_Σ_sub_clo_til a_til clo_til (c_til, ξ_til.2) (c'_til, ξ_til.2);
+      ∃c'_til ∈ ξ'_til.1,
+        step_Σ_sub_clo_til a_til clo_til (c_til, ξ_til.2) (c'_til, ξ'_til.2);
   Ξ_til_wf_σ_κ:
-    ∀a_κ_til ↦ κ_til ∈ ξ_til.2.2,
-      (ξ_til.1 (C_Addr_til a_κ_til) /\
+    ∀a_κ_til ↦ κ_til ∈ ξ'_til.2.2,
+      (ξ'_til.1 (C_Addr_til a_κ_til) /\
        exists f ae,
          let c_call_til := (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2) in
          ξ_til.1 c_call_til /\
-         step_Σ_sub_κ_til a_κ_til κ_til (c_call_til, ξ_til.2) (C_Addr_til a_κ_til, ξ_til.2))
+         step_Σ_sub_κ_til a_κ_til κ_til (c_call_til, ξ_til.2) (C_Addr_til a_κ_til, ξ'_til.2))
 }.
 
-Lemma Ξ_til_wf_a_κ_0' {ξ_til a_κ_til κ_til}:
-  @Ξ_til_wf ξ_til ->
-  ξ_til.2.2 a_κ_til κ_til ->
+(****)
+
+Lemma Ξ_til_wf_a_κ_0' {ξ_til ξ'_til a_κ_til κ_til}:
+  @Ξ_til_wf ξ_til ξ'_til ->
+  ξ'_til.2.2 a_κ_til κ_til ->
   a_κ_til <> a_κ_0_til.
 Proof.
 move => H_wf H_κ_til H_a_κ_til.
@@ -1037,10 +1023,12 @@ rewrite H_a_κ_til in H_κ_til.
 by move: (Ξ_til_wf_a_κ_0 H_wf κ_til).
 Qed.
 
-Lemma Ξ_til_wf_C_Addr {ξ_til c_til}:
-  @Ξ_til_wf ξ_til ->
-  ξ_til.1 c_til ->
-  ξ_til.1 (C_Addr_til c_til.2).
+(****)
+
+Lemma Ξ_til_wf_C_Addr {ξ_til ξ'_til c_til}:
+  @Ξ_til_wf ξ_til ξ'_til ->
+  ξ'_til.1 c_til ->
+  ξ'_til.1 (C_Addr_til c_til.2).
 Proof.
 move => H_wf H_c_til.
 move: (Ξ_til_wf_r H_wf _ H_c_til) => [? [H_stacks H_path]].
@@ -1064,14 +1052,541 @@ Lemma Ξ_til_wf_σ_κ' {ξ_til}:
     ∃κs_til ∈ stacks ξ_til.2.2 c
 *)
 
+(*******************************)
+(**** Allocator consistency ****)
+(*******************************)
+Parameter alloc_til_ordering: forall {ξ_til ξ'_til x c_til clo_til},
+  @Ξ_til_wf ξ_til ξ'_til ->
+  (step_Ξ_til ξ'_til).2.1 (alloc_til x (c_til, ξ'_til.2)) clo_til ->
+  alloc_til x (c_til, ξ'_til.2) =
+  alloc_til x (c_til, (step_Ξ_til ξ'_til).2).
+
+Lemma alloc_til_ordering' {ξ_til ξ'_til x c_til c'_til σ'_til σ'_κ_til} clo_til:
+  @Ξ_til_wf ξ_til ξ'_til ->
+  step_Σ_til (c_til, ξ_til.2) (c'_til, (σ'_til, σ'_κ_til)) ->
+  ξ_til.1 c_til ->
+  σ'_til ⊑ ξ'_til.2.1 ->
+  σ'_til (alloc_til x (c_til, ξ_til.2)) clo_til ->
+  σ'_κ_til ⊑ ξ'_til.2.2 ->
+  alloc_til x (c_til, ξ_til.2) =
+  alloc_til x (c_til, ξ'_til.2).
+Proof.
+move => H_wf H_step H_c_til H_σ'_til H_clo_til H_σ'_κ_til.
+
+case E: (Ξ_til_wf_ξ H_wf) => [H|[[ξ_pre_til H1] H2]].
+
+move: (H_σ'_til (alloc_til x (c_til, ξ_til.2)) clo_til H_clo_til).
+by rewrite H /σ_0_til.
+
+suff: ξ'_til.2.1 (alloc_til x (c_til, ξ_til.2)) clo_til.
+move => H_member.
+rewrite -H2 in H_member *.
+by move: (alloc_til_ordering H1 H_member).
+
+rewrite -H2 /step_Ξ_til; pairs.
+
+exists (c'_til, (σ'_til, σ'_κ_til)).
+split; try done.
+right.
+by exists c_til.
+Qed.
+
+Parameter alloc_κ_til_ordering: forall {ξ_til ξ'_til c_til e' ρ'_til a_til ae ρ_til κ_til},
+  @Ξ_til_wf ξ_til ξ'_til ->
+  let old := alloc_κ_til (c_til, ξ'_til.2) e' ρ'_til
+              (σ_extend eq_Addr_til ξ'_til.2.1 a_til (A_til ae ρ_til ξ'_til.2.1)) in
+  let new := alloc_κ_til (c_til, (step_Ξ_til ξ'_til).2) e' ρ'_til
+              (σ_extend eq_Addr_til (step_Ξ_til ξ'_til).2.1 a_til (A_til ae ρ_til (step_Ξ_til ξ'_til).2.1)) in
+  (step_Ξ_til ξ'_til).2.2 old κ_til ->
+  old = new.
+
+Lemma alloc_κ_til_ordering' {ξ_til ξ'_til c_til e' ρ'_til a_til ae ρ_til c'_til σ'_til σ'_κ_til} κ_til:
+  @Ξ_til_wf ξ_til ξ'_til ->
+  let old := alloc_κ_til (c_til, ξ_til.2) e' ρ'_til
+              (σ_extend eq_Addr_til ξ_til.2.1 a_til (A_til ae ρ_til ξ_til.2.1)) in
+  let new := alloc_κ_til (c_til, ξ'_til.2) e' ρ'_til
+              (σ_extend eq_Addr_til ξ'_til.2.1 a_til (A_til ae ρ_til ξ'_til.2.1)) in
+  step_Σ_til (c_til, ξ_til.2) (c'_til, (σ'_til, σ'_κ_til)) ->
+  ξ_til.1 c_til ->
+  σ'_til ⊑ ξ'_til.2.1 ->
+  σ'_κ_til ⊑ ξ'_til.2.2 ->
+  σ'_κ_til old κ_til ->
+  old = new.
+Proof.
+move => H_wf old new H_step H_c_til H_σ_til H_σ_κ_til H_κ_til.
+
+case E: (Ξ_til_wf_ξ H_wf) => [H|[[ξ_pre_til H1] H2]].
+
+move: (H_σ_κ_til old κ_til H_κ_til).
+by rewrite H /σ_0_til.
+
+suff: ξ'_til.2.2 old κ_til.
+move => H_member.
+rewrite /old /new -H2 in H_member *.
+by move: (alloc_κ_til_ordering H1 H_member).
+
+rewrite -H2 /step_Ξ_til; pairs.
+exists (c'_til, (σ'_til, σ'_κ_til)).
+split; try done.
+right.
+by exists c_til.
+Qed.
+
+
+(*
+Parameter alloc_κ_til_ordering: forall σ_sub_til σ_κ_sub_til σ'_sub_til σ_til σ_κ_til σ'_til,
+  @Ξ_til_wf ξ_til ->
+  ξ_til.2.1 (alloc_til x (c_til, ξ_til.2)) clo_til ->
+  forall c_til e ρ_til,
+    alloc_κ_til (c_til, (σ_sub_til, σ_κ_sub_til)) e ρ_til σ'_sub_til =
+    alloc_κ_til (c_til, (σ_til, σ_κ_til)) e ρ_til σ'_til.
+*)
+
+(* TODO: not needed if we are already at a fixed point?
+Parameter alloc_hat_ordering: forall σ_sub_hat σ_hat,
+  step_Ξ_hat ξ_til
+  forall x c_hat,
+    alloc_hat x (c_hat, σ_sub_hat) =
+    alloc_hat x (c_hat, σ_hat).
+*)
+
+
+(************************************)
+(*** step_Ξ_til is monotonic for  ***)
+(*** r, σ, σ_κ, stacks, and paths ***)
+(************************************)
+
+Lemma step_σ_κ_til {ξ_til ξ'_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  ξ'_til.2.2 ⊑ (step_Ξ_til ξ'_til).2.2.
+Proof.
+move => a_κ_til κ_til H_κ_til.
+rewrite /step_Ξ_til; pairs.
+
+move: (Ξ_til_wf_σ_κ H_wf a_κ_til κ_til H_κ_til).2 => [f [ae [H_c_call_til]]].
+move => [σ'_til [σ'_κ_til]] //=
+        [H_σ'_til [H_σ'_κ_til [H_κ_til' H_step]]].
+inversion H_step.
+exists (step_Σ_til_Let_func κ_til.1.1.1 f ae κ_til.1.1.2 κ_til.1.2 κ_til.2 ξ'_til.2.1 ξ'_til.2.2 x' e' ρ_λ_til).
+
+(*+*)split.
+
+(*+ step +*)
+right.
+exists (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2).
+split.
+
+admit.
+
+move: (substore_A_til f κ_til.1.2 (Ξ_til_wf_substore H_wf) (x', e', ρ_λ_til)).
+rewrite -H6 //= => HH.
+move: {HH} (HH H0) => H_A_til.
+
+move: (step_Σ_til_Let κ_til.1.1.1 f ae κ_til.1.1.2 κ_til.1.2 κ_til.2 ξ'_til.2.1 ξ'_til.2.2 x' e' ρ_λ_til H_A_til).
+by pairs.
+
+(*+ membership +*)
+rewrite /step_Σ_til_Let_func //=.
+do [pairs] in H9 *.
+rewrite -(alloc_til_ordering' (x', e', ρ_λ_til) H_wf H_step); try done.
+rewrite -(alloc_κ_til_ordering' κ_til H_wf H_step); try done.
+rewrite (σ_extend_ind eq_KAddr_til ξ'_til.2.2 σ_κ_til).
+by rewrite -H6 //= H9.
+
+by rewrite -H9 /σ_extend /eq_KAddr_til -H6 (eq_bool_correct.1.2) //=.
+rewrite -H8 /σ_extend /eq_Addr_til -H6 (eq_bool_correct.1.2).
+admit.
+done.
+Qed.
+
+(****)
+
+Lemma Ξ_til_wf_σ_κ_step {ξ_til ξ'_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  ξ_til.2.2 ⊑ ξ'_til.2.2.
+Proof.
+
+case: (Ξ_til_wf_ξ H_wf).
+admit.
+
+move => [[ξ_pre_til H_wf'] H_step].
+rewrite -H_step.
+by move: (step_σ_κ_til H_wf').
+Qed.
+
+(****)
+
+Lemma step_σ_til {ξ_til ξ'_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  ξ'_til.2.1 ⊑ (step_Ξ_til ξ'_til).2.1.
+Proof.
+move => a_til clo_til H_clo_til.
+rewrite /step_Ξ_til; pairs.
+
+move: (Ξ_til_wf_σ H_wf a_til clo_til H_clo_til) =>
+      [c_til [H_c_til [c'_til [H_c'_til]]]]
+      [σ'_til [σ'_κ_til]] //=
+      [H_σ'_til [H_σ'_κ_til [H_clo_til' H_step]]].
+
+inversion H_step.
+
+(*+ Let +*)
+set ϛ'_til := step_Σ_til_Let_func x f ae b ρ_til a_κ_til ξ'_til.2.1 ξ'_til.2.2 x' e' ρ_λ_til.
+exists ϛ'_til.
+split.
+right.
+exists c_til.
+split.
+
+(*+= membership =+*)
+admit.
+
+(*+= step =+*)
+move: (substore_A_til f ρ_til (Ξ_til_wf_substore H_wf) (x', e', ρ_λ_til)).
+rewrite -H1 //= => HH.
+move: {HH} (HH H0) => H_A_til.
+
+move: (step_Σ_til_Let x f ae b ρ_til a_κ_til ξ'_til.2.1 ξ'_til.2.2 x' e' ρ_λ_til H_A_til).
+by rewrite /ϛ'_til -H /step_Σ_til_Let_func //=; pairs.
+
+(*+= membership =+*)
+move: H_clo_til'.
+rewrite -H3 //= /ϛ'_til //=.
+rewrite H1; pairs; rewrite H -(alloc_til_ordering' (x', e', ρ_λ_til) H_wf H_step); try done.
+move: (substore_A_til ae ρ_til (Ξ_til_wf_substore H_wf)) => HH.
+rewrite -H1 //= in HH.
+by apply (substore_σ_extend HH a_til clo_til).
+
+admit.
+
+(*+ Ret +*)
+set ϛ'_til := step_Σ_til_Ret_func ae ρ_til a_κ_til ξ'_til.2.1 ξ'_til.2.2 x e' ρ_κ_til a'_κ_til.
+exists ϛ'_til.
+split.
+right.
+exists c_til.
+split.
+
+(*+= membership =+*)
+admit.
+
+(*+= step =+*)
+move: (Ξ_til_wf_σ_κ_step H_wf a_κ_til (x, e', ρ_κ_til, a'_κ_til)).
+rewrite -H1 //= => HH.
+move: (step_Σ_til_Ret ae ρ_til a_κ_til ξ'_til.2.1 ξ'_til.2.2 x e' ρ_κ_til a'_κ_til (HH H0)).
+by rewrite /ϛ'_til -H /step_Σ_til_Ret_func; pairs.
+
+(*+= membership =+*)
+move: H_clo_til'.
+rewrite -H3 /ϛ'_til /step_Σ_til_Ret_func //=.
+
+rewrite H1; pairs; rewrite H -(alloc_til_ordering' clo_til H_wf H_step); try done.
+move: (substore_A_til ae ρ_til (Ξ_til_wf_substore H_wf)) => HH.
+rewrite -H1 //= in HH.
+by apply (substore_σ_extend HH a_til clo_til).
+
+admit.
+Qed.
+
+(****)
+
+Lemma Ξ_til_wf_σ_step {ξ_til ξ'_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  ξ_til.2.1 ⊑ ξ'_til.2.1.
+Proof. by apply Ξ_til_wf_substore. Qed.
+
+(****)
+
+Lemma step_r_til {ξ_til ξ'_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  ξ'_til.1 ⊆ (step_Ξ_til ξ'_til).1.
+Proof.
+move => c_til H_c_til.
+move: (Ξ_til_wf_r H_wf c_til H_c_til) => [κs_til [H_stacks H_paths]].
+inversion H_paths.
+
+(*+ nil +*)
+rewrite /step_Ξ_til; pairs.
+exists σ_0_til σ_κ_0_til.
+by left.
+
+(*+ Let +*)
+rewrite /step_Ξ_til; pairs.
+move: H3 => [σ'_til [σ'_κ_til]] //= [H_σ'_til [H_σ'_κ_til H_step]].
+inversion H_step.
+set ϛ'_til := step_Σ_til_Let_func x f ae b ρ_mid_til a_κ_mid_til ξ'_til.2.1 ξ'_til.2.2 x' e' ρ_λ_til.
+exists ϛ'_til.2.1 ϛ'_til.2.2.
+right.
+exists c_mid_til.
+split.
+by move: (path_end_til H0).
+
+(* have: A_til ... *)
+move: (substore_A_til f ρ_mid_til (Ξ_til_wf_substore H_wf) (x', e', ρ_λ_til)).
+rewrite -H12 //= H12 => HH.
+move: {HH} (HH H6) => H_A_til.
+
+(* have: step_Σ_til ... *)
+move: (step_Σ_til_Let x f ae b ρ_mid_til a_κ_mid_til ξ'_til.2.1 ξ'_til.2.2 x' e' ρ_λ_til H_A_til).
+rewrite /ϛ'_til /step_Σ_til_Let_func /c_mid_til; pairs.
+rewrite H12 in H15.
+rewrite (alloc_til_ordering' (x', e', ρ_λ_til) H_wf H_step) in H15 *; try done.
+have: σ_til = ξ_til.2.1 by rewrite -H12.
+move => ->.
+rewrite (alloc_κ_til_ordering' κ_til H_wf H_step); try done.
+
+by rewrite -H15 /σ_extend /eq_KAddr_til -H12 (eq_bool_correct.1.2) //=.
+rewrite -H14 /σ_extend /eq_Addr_til -H12 (eq_bool_correct.1.2); try done.
+
+admit.
+
+(*
+set old := alloc_κ_til (c_mid_til, ξ_til.2) e'
+         (ρ_extend ρ_λ_til x' (alloc_til x' (c_mid_til, ξ'_til.2)))
+         (σ_extend eq_Addr_til ξ_til.2.1 (alloc_til x' (c_mid_til, ξ'_til.2))
+            (A_til ae ρ_mid_til ξ_til.2.1)).
+set new := alloc_κ_til (c_mid_til, ξ'_til.2) e'
+         (ρ_extend ρ_λ_til x' (alloc_til x' (c_mid_til, ξ'_til.2)))
+         (σ_extend eq_Addr_til ξ'_til.2.1
+            (alloc_til x' (c_mid_til, ξ'_til.2))
+            (A_til ae ρ_mid_til ξ'_til.2.1)).
+
+have: step_Σ_sub_κ_til old (x, b, ρ_mid_til, a_κ_mid_til) (c_mid_til, ξ_til.2) (c_til, ξ'_til.2).
+admit.
+move => HHH.
+rewrite /old /new.
+rewrite (alloc_κ_til_ordering' H_wf H1 HHH).
+done.
+
+(*
+
+rewrite (alloc_til_ordering H_wf σ_til σ_κ_til ξ'_til.2.1 ξ'_til.2.2); pairs.
+rewrite (alloc_κ_til_ordering σ_til σ_κ_til (σ_extend eq_Addr_til σ_til
+        (alloc_til x' (Let x f ae b, ρ_mid_til, a_κ_mid_til, ξ'_til.2))
+        (A_til ae ρ_mid_til σ_til)) ξ'_til.2.1 ξ'_til.2.2 (σ_extend eq_Addr_til ξ'_til.2.1
+        (alloc_til x' (Let x f ae b, ρ_mid_til, a_κ_mid_til, ξ'_til.2))
+        (A_til ae ρ_mid_til ξ'_til.2.1))).
+by pairs.
+*)
+*)
+
+(*+ Ret +*)
+rewrite /step_Ξ_til; pairs.
+set ϛ'_til := step_Σ_til_Ret_func ae ρ_mid_til a_κ_mid_til ξ'_til.2.1 ξ'_til.2.2 x e' ρ_κ_til a'_κ_til.
+exists ϛ'_til.2.1 ϛ'_til.2.2.
+right.
+exists c_mid_til.
+split.
+by move: (path_end_til H0).
+
+have: ξ'_til.2.2 a_κ_mid_til (x, e', ρ_κ_til, a'_κ_til).
+rewrite /x /e' /ρ_κ_til /a'_κ_til; pairs.
+by apply (Ξ_til_wf_σ_κ_step H_wf).
+move => H_κ_til.
+
+move: (step_Σ_til_Ret ae ρ_mid_til a_κ_mid_til ξ'_til.2.1 ξ'_til.2.2 x e' ρ_κ_til a'_κ_til H_κ_til).
+rewrite /ϛ'_til /step_Σ_til_Ret_func /c'_til /c_mid_til ; pairs.
+
+admit.
+Qed.
+
+(****)
+
+Lemma Ξ_til_wf_r_step {ξ_til ξ'_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  ξ_til.1 ⊆ ξ'_til.1.
+Proof.
+
+case: (Ξ_til_wf_ξ H_wf).
+admit.
+
+move => [[ξ_pre_til H_wf'] H_step].
+rewrite -H_step.
+by move: (step_r_til H_wf').
+Qed.
+
+(****)
+
+Lemma step_til {ξ_til ξ'_til c_til c'_til σ'_til σ'_κ_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  step_Σ_til (c_til, ξ'_til.2) (c'_til, (σ'_til, σ'_κ_til)) ->
+  ξ'_til.1 c_til ->
+  (step_Ξ_til ξ'_til).1 c'_til /\
+  σ'_til ⊑ (step_Ξ_til ξ'_til).2.1 /\ σ'_κ_til ⊑ (step_Ξ_til ξ'_til).2.2.
+Proof.
+move => H_step H_c_til.
+rewrite /step_Ξ_til; pairs.
+
+do ?split.
+
+exists σ'_til σ'_κ_til.
+right.
+exists c_til.
+split; try done.
+
+move => a_til clo_til H_clo_til.
+exists (c'_til, (σ'_til, σ'_κ_til)).
+inversion H_step.
+
+split.
+right.
+exists c_til.
+split; try done.
+by rewrite H4 H2 H3 H1.
+by rewrite //= H3.
+
+split.
+right.
+exists c_til.
+split; try done.
+by rewrite H4 H2 H3 H1.
+by rewrite //= H3.
+
+move => a_til clo_til H_clo_til.
+exists (c'_til, (σ'_til, σ'_κ_til)).
+inversion H_step.
+
+split.
+right.
+exists c_til.
+split; try done.
+by rewrite H4 H2 H3 H1.
+by rewrite //= H4.
+
+split.
+right.
+exists c_til.
+split; try done.
+by rewrite H4 H2 H3 H1.
+by rewrite H4 //=.
+Qed.
+
+(****)
+
+Lemma step_stacks {ξ_til ξ'_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  stacks ξ'_til.2.2 ⊑ stacks (step_Ξ_til ξ'_til).2.2.
+Proof.
+move => a_κ_til κ_til H_stacks.
+induction H_stacks.
+
+(*+ null +*)
+by constructor.
+
+(*+ cons +*)
+constructor; try done.
+by move: (step_σ_κ_til H_wf a_κ_til κ_til H0).
+Qed.
+
+(****)
+
+Lemma Ξ_til_wf_stacks_step {ξ_til ξ'_til} (H_wf: @Ξ_til_wf ξ_til ξ'_til):
+  stacks ξ_til.2.2 ⊑ stacks ξ'_til.2.2.
+Proof.
+
+case: (Ξ_til_wf_ξ H_wf).
+admit.
+
+move => [[ξ_pre_til H_wf'] H_step].
+rewrite -H_step.
+by move: (step_stacks H_wf').
+Qed.
+
+(****)
+
+Lemma step_path_til {ξ_til ξ'_til} (H_wf : @Ξ_til_wf ξ_til ξ'_til) c_til κs_til:
+  path_til ξ_til ξ'_til c_til κs_til ⊑ path_til ξ'_til (step_Ξ_til ξ'_til) c_til κs_til.
+Proof.
+move => c'_til κs'_til.
+elim => [
+  H_c_til H_stacks |
+  x f ae b ρ_pre_til a_κ_pre_til c_pre_til H_c_pre_til κs_pre_til c_mid_til φ'_til
+    IH_no_step IH_step H_c_mid_til H_φ'_til H_step |
+  ae ρ_pre_til a_κ_pre_til κ'_til κs'_pre_til c_mid_til
+     x e' ρ_κ_til a'_κ_til c_pre_til
+     H_c_pre_til IH_no_step IH_step H_c_mid_til H_κ_til H_step
+].
+(*= nil =*)
+constructor.
+by apply: (step_r_til H_wf).
+by apply: (step_stacks H_wf).
+
+(*= Let =*)
+apply (path_til_Let ξ'_til (step_Ξ_til ξ'_til) c_til κs_til x f ae b ρ_pre_til a_κ_pre_til c_pre_til).
+by apply (step_r_til H_wf).
+by [].
+admit.
+by apply (step_σ_κ_til H_wf).
+move: H_step => [σ'_til [σ'_κ_til]] //=
+                [H_σ'_til [H_σ'_κ_til H_step]].
+inversion H_step.
+(*rewrite {H x0 H1 f0 H2 ae0 H3 b0 H4 ρ_til H5 a_κ_til} (H9).*)
+set σ''_til := σ_extend eq_Addr_til σ_til
+         (alloc_til x'
+            (Let x f ae b, ρ_pre_til, a_κ_pre_til, (σ_til, σ_κ_til)))
+         (A_til ae ρ_pre_til ξ'_til.2.1).
+exists σ''_til σ'_κ_til.
+do ?split.
+admit. (*by apply (store_trans H_σ'_til (step_σ_til H_wf)).*)
+by apply (store_trans H_σ'_κ_til (step_σ_κ_til H_wf)).
+move: (substore_A_til f ρ_pre_til (Ξ_til_wf_substore H_wf) (x', e', ρ_λ_til)).
+rewrite -H6 //= H6 => HH.
+move: {HH} (HH H0) => H_A_til.
+move: (step_Σ_til_Let x f ae b ρ_pre_til a_κ_pre_til ξ'_til.2.1 ξ'_til.2.2 x' e' ρ_λ_til H_A_til).
+rewrite /step_Σ_til_Let_func /σ''_til -H9 -/c_mid_til; pairs.
+rewrite -(alloc_til_ordering' (x', e', ρ_λ_til) H_wf H_step); try done.
+rewrite (σ_extend_ind eq_KAddr_til ξ'_til.2.2 σ_κ_til).
+rewrite (σ_extend_ind eq_Addr_til ξ'_til.2.1 σ_til).
+rewrite -(alloc_κ_til_ordering' φ'_til H_wf H_step); try done.
+by rewrite -H6 //=.
+
+by rewrite -H9 /σ_extend /eq_KAddr_til -/c_mid_til -H6 //= (eq_bool_correct.1.2); try done.
+
+rewrite -H8 /σ_extend /eq_Addr_til -/c_mid_til -H6 //= (eq_bool_correct.1.2); try done.
+
+admit.
+
+(*= Ret =*)
+move: H_step => [σ_til] [σ'_til] [H_σ_til] [H_σ'_til] //= H_step.
+rewrite /c_pre_til /c_mid_til.
+rewrite (alloc_til_ordering' (x, e', ρ_κ_til) H_wf H_step); try done.
+(*        (alloc_til_ordering ξ'_til.2.1 ξ'_til.2.2 (step_Ξ_til ξ'_til).2.1 (step_Ξ_til ξ'_til).2.2); pairs; try done.*)
+apply: path_til_Ret.
+rewrite -/x -/e' -/ρ_κ_til -/a'_κ_til.
+rewrite -(alloc_til_ordering' (x, e', ρ_κ_til) H_wf H_step); try done.
+admit.
+admit.
+by [].
+by apply (Ξ_til_wf_r_step H_wf).
+by apply (Ξ_til_wf_σ_κ_step H_wf).
+admit.
+admit.
+(*
+by apply (step_r_til H_wf).
+done.
+rewrite (surjective_pairing (step_Ξ_til ξ'_til).2).
+        -(alloc_til_ordering ξ'_til.2.1 ξ'_til.2.2 (step_Ξ_til ξ'_til).2.1 (step_Ξ_til ξ'_til).2.2);
+(*        -(alloc_til_ordering (step_σ_til ξ'_til _) (step_σ_κ_til ξ'_til _));*)
+  pairs;
+  try rewrite -/c_mid_til -/c_pre_til;
+  try done.
+by apply: step_r_til.
+by apply: step_σ_κ_til.
+move: H_step => [σ_til [σ_κ_til [σ'_til [σ'_κ_til]]]] //=
+                [H_σ_til [H_σ_κ_til [H_σ'_til [H_σ'_κ_til H_step]]]].
+inversion H_step.
+rewrite {H ae0 H1 ρ_til H2 a_κ_til H3 σ_til0 H4 σ_κ_til0 H5 e'0}.
+exists σ_til σ_κ_til σ'_til σ'_κ_til.
+do ?split.
+by apply (store_trans H_σ_til (step_σ_til H_wf)).
+by apply (store_trans H_σ_κ_til (step_σ_κ_til H_wf)).
+by apply (store_trans H_σ'_til (step_σ_til H_wf)).
+by apply (store_trans H_σ'_κ_til (step_σ_κ_til H_wf)).
+by exact.
+*)
+Qed.
+
+
 (***************************)
 (***** Stacks vs paths *****)
 (***************************)
 
-Lemma paths_have_stacks {ξ_til c_til κs_til}:
-  @Ξ_til_wf ξ_til ->
-  path_til ξ_til c_0_til nil c_til κs_til ->
-  stacks ξ_til.2.2 c_til.2 κs_til.
+Lemma paths_have_stacks {ξ_til ξ'_til c_til κs_til}:
+  @Ξ_til_wf ξ_til ξ'_til ->
+  path_til ξ_til ξ'_til c_0_til nil c_til κs_til ->
+  stacks ξ'_til.2.2 c_til.2 κs_til.
 Proof.
 move => H_wf.
 elim; try done.
@@ -1079,7 +1594,7 @@ elim; try done.
 (*+ Let +*)
 move => *.
 apply stacks_cons; try done.
-apply: Ξ_til_wf_a_κ_0'; try done.
+apply: (Ξ_til_wf_a_κ_0' H_wf); try done.
 
 (*+ Ret +*)
 move => ? ? ? ? ? ? ? ? ? ? ? ? ? H_stacks ? ?.
@@ -1088,12 +1603,12 @@ Qed.
 
 (****)
 
-Lemma path_from_entry {ξ_til c_til κs_til κs'_til}:
-  @Ξ_til_wf ξ_til ->
-  path_til ξ_til c_0_til nil c_til (κs'_til ++ κs_til) ->
+Lemma path_from_entry {ξ_til ξ'_til c_til κs_til κs'_til}:
+  @Ξ_til_wf ξ_til ξ'_til ->
+  path_til ξ_til ξ'_til c_0_til nil c_til (κs'_til ++ κs_til) ->
   let a'_κ_til := κs_last_addr c_til.2 κs'_til in
-  (∀κs''_til ∈ stacks ξ_til.2.2 a'_κ_til,
-     path_til ξ_til (C_Addr_til a'_κ_til) κs''_til c_til (κs'_til ++ κs''_til)).
+  (∀κs''_til ∈ stacks ξ'_til.2.2 a'_κ_til,
+     path_til ξ_til ξ'_til (C_Addr_til a'_κ_til) κs''_til c_til (κs'_til ++ κs''_til)).
 Proof.
 move => H_wf H.
 
@@ -1115,11 +1630,11 @@ rename c'_til into c_til.
 
 (*+= κs'_til = nil =+*)
 rewrite /κs_last_addr //=; pairs => E.
-move: H2 => //= [σ_til [σ_κ_til [σ'_til [σ'_κ_til [H_σ_til [H_σ_κ_til [H_σ'_til [H_σ'_κ_til H2]]]]]]]].
-inversion H2.
-rewrite ?H12 in H4 H11 H13 *.
-do ?[rewrite H4|rewrite H11|rewrite H12|rewrite H13].
-move => {H3 x0 H5 f0 H6 ae0 H7 b0 H8 ρ_til H9 a_κ_til}.
+move: H3 => //= [σ'_til] [σ'_κ_til] [H_σ'_til] [H_σ'_κ_til] H3.
+inversion H3.
+rewrite ?H13 in H5 H12 H14 *.
+do ?[rewrite H5|rewrite H12|rewrite H13|rewrite H14].
+move => {H4 x0 H6 f0 H7 ae0 H8 b0 H9 ρ_til H10 a_κ_til}.
 
 rewrite -[in C_Addr_til _]H12 //= C_Addr_til_inj H12.
 
@@ -1133,7 +1648,7 @@ rewrite E2 {κs'_til0 E2} in H0 IHpath_til.
 move => κs''_til H_κs''_til.
 move: (IHpath_til κs_til κs'_til H_wf eq_refl κs''_til H_κs''_til) => IH.
 rewrite /c_mid_til in H1 IH *.
-by move: (path_til_Let ξ_til (C_Addr_til (κs_last_addr a_κ_mid_til κs'_til)) κs''_til x f ae b ρ_mid_til a_κ_mid_til c_til H (κs'_til ++ κs''_til) IH H1 H2).
+by move: (path_til_Let ξ_til ξ'_til (C_Addr_til (κs_last_addr a_κ_mid_til κs'_til)) κs''_til x f ae b ρ_mid_til a_κ_mid_til c_til H (κs'_til ++ κs''_til) IH H1 H2 H3).
 
 (*+ Case: path_til_Ret +*)
 move => κs''_til H_κs''_til.
@@ -1143,16 +1658,16 @@ move => Ha.
 move: {Ha} (Ha κs''_til H_κs''_til) => IH.
 rewrite /c_mid_til in H2.
 do [pairs; rewrite -/a'_κ_til] in IH.
-by move: (path_til_Ret ξ_til (C_Addr_til (κs_last_addr a'_κ_til κs'_til)) κs''_til ae ρ_mid_til a_κ_mid_til κ'_til (κs'_til ++ κs''_til) H IH H1 H2).
+by move: (path_til_Ret ξ_til ξ'_til (C_Addr_til (κs_last_addr a'_κ_til κs'_til)) κs''_til ae ρ_mid_til a_κ_mid_til κ'_til (κs'_til ++ κs''_til) H IH H1 H2 H3).
 Qed.
 
 (****)
 
-Lemma path_from_entry' {ξ_til c_til κs_til}:
-  @Ξ_til_wf ξ_til ->
-  path_til ξ_til c_0_til nil c_til κs_til ->
-  (∀κs''_til ∈ stacks ξ_til.2.2 c_til.2,
-     path_til ξ_til (C_Addr_til c_til.2) κs''_til c_til κs''_til).
+Lemma path_from_entry' {ξ_til ξ'_til c_til κs_til}:
+  @Ξ_til_wf ξ_til ξ'_til ->
+  path_til ξ_til ξ'_til c_0_til nil c_til κs_til ->
+  (∀κs''_til ∈ stacks ξ'_til.2.2 c_til.2,
+     path_til ξ_til ξ'_til (C_Addr_til c_til.2) κs''_til c_til κs''_til).
 Proof.
 move => H_wf H_path.
 
@@ -1164,11 +1679,11 @@ Qed.
 
 (****)
 
-Lemma stacks_have_paths {ξ_til}:
-  @Ξ_til_wf ξ_til ->
-  ∀c_til ∈ ξ_til.1,
-  ∀κs_til ∈ stacks ξ_til.2.2 c_til.2,
-  path_til ξ_til c_0_til nil c_til κs_til.
+Lemma stacks_have_paths {ξ_til ξ'_til}:
+  @Ξ_til_wf ξ_til ξ'_til ->
+  ∀c_til ∈ ξ'_til.1,
+  ∀κs_til ∈ stacks ξ'_til.2.2 c_til.2,
+  path_til ξ_til ξ'_til c_0_til nil c_til κs_til.
 Proof.
 move => H_wf c_til H_c_til κs_til.
 
@@ -1185,35 +1700,39 @@ by rewrite (stacks_null_Konts H_stacks') in H_path.
 (*+ cons +*)
 
 (* Exists path to c'_til *)
-move: (Ξ_til_wf_r H_wf c'_til H_c'_til) => [κs_exists_til H_κs_exists_til].
+move: (Ξ_til_wf_r H_wf c'_til H_c'_til) => [κs_exists_til [_ H_κs_exists_til]].
 
 (* We have a non-popping path from entry *)
-move: (path_from_entry' H_wf H_κs_exists_til.2) => H_non_popping_path.
+move: (path_from_entry' H_wf H_κs_exists_til) => H_non_popping_path.
 
 (* We have a step from call to entry *)
 have: exists f ae,
         let c_call_til := (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2) in
-        ξ_til.1 c_call_til /\ step_Σ_sub_til (c_call_til, ξ_til.2) (C_Addr_til c'_til.2, ξ_til.2).
+        ξ'_til.1 c_call_til /\ step_Σ_sub_til (c_call_til, ξ_til.2) (C_Addr_til c'_til.2, ξ'_til.2).
 move: (Ξ_til_wf_σ_κ H_wf c'_til.2 κ_til (stacks_cons_Kont H_stacks).2.2).2
   => [f [ae [H_c_call_til H_step]]].
 exists f ae.
 split; try done.
+
+by apply (Ξ_til_wf_r_step H_wf).
 by move: (step_Σ_sub_κ_til_weakening H_step).
 move => [f [ae [H_c_call_til H_step]]].
 set c_call_til := (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2) in H_c_call_til H_step *.
 
 (* We have a path from c_0 to call *)
-have: stacks ξ_til.2.2 c_call_til.2 κs_til.
+have: stacks ξ'_til.2.2 c_call_til.2 κs_til.
 by move: (stacks_cons_Kont H_stacks).2.1; rewrite /c_call_til //=.
 move => H_stacks_call.
 move: (IH c_call_til H_c_call_til H_stacks_call) => H_path_call.
 
 (* We have a path from c_0 to entry *)
-have: path_til ξ_til c_0_til nil (C_Addr_til c'_til.2) (κ_til :: κs_til).
+have: path_til ξ_til ξ'_til c_0_til nil (C_Addr_til c'_til.2) (κ_til :: κs_til).
 rewrite (surjective_pairing κ_til) (surjective_pairing κ_til.1) (surjective_pairing κ_til.1.1).
-apply (path_til_Let ξ_til c_0_til nil κ_til.1.1.1 f ae κ_til.1.1.2 κ_til.1.2 κ_til.2 (C_Addr_til c'_til.2)); try done.
+apply (path_til_Let ξ_til ξ'_til c_0_til nil κ_til.1.1.1 f ae κ_til.1.1.2 κ_til.1.2 κ_til.2 (C_Addr_til c'_til.2)); try done.
 by move: (Ξ_til_wf_C_Addr H_wf H_c'_til).
+admit.
 by inversion H_stacks; rewrite C_Addr_til_Addr; pairs.
+rewrite -/c_call_til.
 move => H_path_entry.
 
 (* We have a path from c_0 to c_til *)
@@ -1373,17 +1892,17 @@ Qed.
 
 (****)
 
-Lemma path_til_hat {ξ_hat ξ_til c_til κs_til}:
+Lemma path_til_hat {ξ_hat ξ_til ξ'_til c_til κs_til}:
   step_Ξ_hat ξ_hat = ξ_hat ->
-  @Ξ_til_wf ξ_til ->
-  prec_Store ξ_hat.2 ξ_til.2.1 ->
-  path_til ξ_til c_0_til nil c_til κs_til ->
+  @Ξ_til_wf ξ_til ξ'_til ->
+  prec_Store ξ_hat.2 ξ'_til.2.1 ->
+  path_til ξ_til ξ'_til c_0_til nil c_til κs_til ->
   path_hat ξ_hat c_0_hat (C_til_hat c_til κs_til).
 Proof.
 move => H_fix H_wf H_prec_Store p_til.
 (*+*) elim: p_til => {c_til κs_til}
-  [|x f ae b ρ_mid_til a_κ_mid_til c_til H_c_til κs_til c_mid_til φ'_til H_path_til IH H_κ_til H_step
-   |ae ρ_mid_til a_κ_mid_til κ'_til κs_til c_mid_til x e' ρ_κ_til a'_κ_til c_til H_c_til H_path_til IH H_κ_til H_step].
+  [|x f ae b ρ_mid_til a_κ_mid_til c_til H_c_til κs_til c_mid_til φ'_til H_path_til IH H_c_mid_til H_κ_til H_step
+   |ae ρ_mid_til a_κ_mid_til κ'_til κs_til c_mid_til x e' ρ_κ_til a'_κ_til c_til H_c_til H_path_til IH H_c_mid_til H_κ_til H_step].
 
 (*+ nil +*)
 rewrite -c_0_til_hat.
@@ -1391,19 +1910,20 @@ constructor.
 by apply fix_contains_c_0_hat.
 
 (*+ Let +*)
-move: H_step => [σ_sub_til [σ_κ_sub_til [σ'_sub_til [σ'_κ_sub_til]]]] //=
-                [H_σ_sub_til [H_σ_κ_sub_til [H_σ'_sub_til [H_σ'_κ_sub_til H]]]].
+move: H_step => [σ'_sub_til [σ'_κ_sub_til]] //=
+                [H_σ'_sub_til [H_σ'_κ_sub_til H]].
 
 inversion H.
-move => {H0 x0 H2 f0 H3 ae0 H4 b0 ρ_til H5 a_κ_til H6 σ_til H7 σ_κ_til H8}.
-rewrite H10 in H9 H11 *.
-rewrite H9.
+move => {H0 x0 H2 f0 H3 ae0 H4 b0 ρ_til H5 a_κ_til H6}.
+rewrite H9 in H8 H10 *.
+rewrite H8.
 
 (* have: A_hat ... *)
+(have: σ_til = ξ_til.2.1 by rewrite -H7) => H_σ_til.
+rewrite H_σ_til in H1.
 move: (substore_A_til_hat
          (prec_Clo_bij.2 (x', e', ρ_λ_til)).1
-         (trans_prec_Store_til H_prec_Store H_σ_sub_til) H1) => H_A_hat.
-rewrite /Clo_til_hat //= in H_A_hat.
+         (trans_prec_Store_til H_prec_Store (Ξ_til_wf_σ_step H_wf)) H1) => H_A_hat.
 
 (* have: step_Σ_hat ... *)
 move: (step_Σ_hat_Let x f ae b (Env_til_hat ρ_mid_til) (Konts_til_hat κs_til) ξ_hat.2 x' e' (Env_til_hat ρ_λ_til) H_A_hat).
@@ -1435,11 +1955,19 @@ rewrite /substore /subseteq //=.
 by move: (fix_contains_step H_fix H_step_hat (path_end_hat IH)).2.
 
 (*+= step +=*)
-rewrite /C_til_hat -H9 //= /compose //= /Frame_til_hat //=.
-rewrite (alloc_til_ordering σ_sub_til σ_κ_sub_til ξ_til.2.1 ξ_til.2.2).
+rewrite /C_til_hat -H8 //= /compose //= /Frame_til_hat H7 //=.
+rewrite (alloc_til_ordering' (x', e', ρ_λ_til) H_wf H); try done.
+(*rewrite (alloc_til_ordering σ_sub_til σ_κ_sub_til ξ'_til.2.1 ξ'_til.2.2).*)
 rewrite (ρ_extend_til_hat _ _ _ κs_til) //= /C_til_hat //=.
-by rewrite (alloc_hat_ordering (Store_til_hat ξ_til.2.1) ξ_hat.2).
+admit. (* NEEDS alloc_hat_ordering
+rewrite (alloc_hat_ordering 
+by rewrite (alloc_hat_ordering (Store_til_hat ξ'_til.2.1) ξ_hat.2). *)
 by move: (paths_have_stacks H_wf H_path_til).
+
+rewrite -H9 //= H7 /σ_extend /eq_Addr_til.
+rewrite (eq_bool_correct.1.2); try done.
+rewrite -H7 //= in H1.
+admit.
 (* END HAVE *)
 move => H_sub_step.
 
@@ -1454,13 +1982,13 @@ move: H_sub_step => [?] [?] //= H_sub_step.
 by move: (fix_contains_step H_fix H_sub_step (path_end_hat IH)).1.
 
 (*+ Ret +*)
-move: H_step => [σ_sub_til [σ_κ_sub_til [σ'_sub_til [σ'_κ_sub_til]]]] //=
-                [H_σ_sub_til [H_σ_κ_sub_til [H_σ'_sub_til [H_σ'_κ_sub_til H]]]].
+move: H_step => [σ'_sub_til [σ'_κ_sub_til]] //=
+                [H_σ'_sub_til [H_σ'_κ_sub_til H]].
 
 inversion H.
-move => {H0 ae0 H2 ρ_til H3 a_κ_til H4 σ_til H5 σ_κ_til H6 e'0 H8 a'_κ_til0}.
+(*move => {H0 ae0 H2 ρ_til H3 a_κ_til H4 σ_til H5 σ_κ_til H6 e'0 H8 a'_κ_til0}.*)
 rename x0 into x'.
-rewrite -H10 {H10 σ'_κ_sub_til} in H_σ'_κ_sub_til H H1.
+rewrite -H9 {H9 σ'_κ_sub_til} in H_σ'_κ_sub_til H H1.
 
 have: κ'_til = (x, e',  ρ_κ_til, a'_κ_til).
 by rewrite /x /e' /ρ_κ_til /a'_κ_til; pairs.
@@ -1488,8 +2016,9 @@ by apply (fix_contains_step H_fix H_step_hat (path_end_hat IH)).2.
 rewrite /C_til_hat //=.
 rewrite (ρ_extend_til_hat _ _ _ (κ'_til :: κs_til)).
 rewrite /c_mid_til /C_til_hat //= H_κ'_til /compose /Frame_til_hat //=.
-by rewrite (alloc_hat_ordering (Store_til_hat ξ_til.2.1) ξ_hat.2).
-by apply (paths_have_stacks H_wf H_path_til).
+admit. (* NEEDS alloc_hat_ordering
+by rewrite (alloc_hat_ordering (Store_til_hat ξ'_til.2.1) ξ_hat.2).*)
+admit. (*by apply (paths_have_stacks H_wf H_path_til).*)
 (* END HAVE *)
 move => H_step_sub_hat.
 
@@ -1502,318 +2031,12 @@ by move: (fix_contains_step H_fix H_sub_step (path_end_hat IH)).1.
 Qed.
 
 
-(************************************)
-(*** step_Ξ_til is monotonic for  ***)
-(*** r, σ, σ_κ, stacks, and paths ***)
-(************************************)
-
-Lemma step_r_til {ξ_til} (H_wf: @Ξ_til_wf ξ_til):
-  ξ_til.1 ⊆ (step_Ξ_til ξ_til).1.
-Proof.
-move => c_til H_c_til.
-move: (Ξ_til_wf_r H_wf c_til H_c_til) => [κs_til [H_stacks H_paths]].
-inversion H_paths.
-
-(*+ nil +*)
-rewrite /step_Ξ_til; pairs.
-exists σ_0_til σ_κ_0_til.
-by left.
-
-(*+ Let +*)
-rewrite /step_Ξ_til; pairs.
-move: H2 => [σ_til [σ_κ_til [σ'_til [σ'_κ_til]]]] //= [H_σ_til [H_σ_κ_til [H_σ'_til [H_σ'_κ_til H_step]]]].
-inversion H_step.
-set ϛ'_til := step_Σ_til_Let_func x f ae b ρ_mid_til a_κ_mid_til ξ_til.2.1 ξ_til.2.2 x' e' ρ_λ_til.
-exists ϛ'_til.2.1 ϛ'_til.2.2.
-right.
-exists c_mid_til.
-split.
-by move: (path_end_til H0).
-
-(* have: A_til ... *)
-move: (substore_A_til f ρ_mid_til H_σ_til (x', e', ρ_λ_til) H5) => H_A_til.
-
-(* have: step_Σ_til ... *)
-move: (step_Σ_til_Let x f ae b ρ_mid_til a_κ_mid_til ξ_til.2.1 ξ_til.2.2 x' e' ρ_λ_til H_A_til).
-rewrite /ϛ'_til /step_Σ_til_Let_func /c_mid_til; pairs.
-rewrite (alloc_til_ordering σ_til σ_κ_til ξ_til.2.1 ξ_til.2.2); pairs.
-rewrite (alloc_κ_til_ordering σ_til σ_κ_til (σ_extend eq_Addr_til σ_til
-        (alloc_til x' (Let x f ae b, ρ_mid_til, a_κ_mid_til, ξ_til.2))
-        (A_til ae ρ_mid_til σ_til)) ξ_til.2.1 ξ_til.2.2 (σ_extend eq_Addr_til ξ_til.2.1
-        (alloc_til x' (Let x f ae b, ρ_mid_til, a_κ_mid_til, ξ_til.2))
-        (A_til ae ρ_mid_til ξ_til.2.1))).
-by pairs.
-
-(*+ Ret +*)
-rewrite /step_Ξ_til; pairs.
-set ϛ'_til := step_Σ_til_Ret_func ae ρ_mid_til a_κ_mid_til ξ_til.2.1 ξ_til.2.2 x e' ρ_κ_til a'_κ_til.
-exists ϛ'_til.2.1 ϛ'_til.2.2.
-right.
-exists c_mid_til.
-split.
-by move: (path_end_til H0).
-
-have: ξ_til.2.2 a_κ_mid_til (x, e', ρ_κ_til, a'_κ_til).
-by rewrite /x /e' /ρ_κ_til /a'_κ_til; pairs.
-move => H_κ_til.
-
-move: (step_Σ_til_Ret ae ρ_mid_til a_κ_mid_til ξ_til.2.1 ξ_til.2.2 x e' ρ_κ_til a'_κ_til H_κ_til).
-by rewrite /ϛ'_til /step_Σ_til_Ret_func /c'_til /c_mid_til ; pairs.
-Qed.
-
-(****)
-
-Lemma step_σ_κ_til {ξ_til} (H_wf: @Ξ_til_wf ξ_til):
-  ξ_til.2.2 ⊑ (step_Ξ_til ξ_til).2.2.
-Proof.
-move => a_κ_til κ_til H_κ_til.
-rewrite /step_Ξ_til; pairs.
-
-move: (Ξ_til_wf_σ_κ H_wf a_κ_til κ_til H_κ_til).2 => [f [ae [H_c_call_til]]].
-move => [σ_til [σ_κ_til [σ'_til [σ'_κ_til]]]] //=
-        [H_σ_til [H_σ_κ_til [H_σ'_til [H_σ'_κ_til [H_κ_til' H_step]]]]].
-inversion H_step.
-exists (step_Σ_til_Let_func κ_til.1.1.1 f ae κ_til.1.1.2 κ_til.1.2 κ_til.2 ξ_til.2.1 ξ_til.2.2 x' e' ρ_λ_til).
-
-(*+*)split.
-
-(*+ step +*)
-right.
-exists (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2).
-split; try done.
-move: (substore_A_til _ _ H_σ_til (x', e', ρ_λ_til) H0) => H_A_til.
-move: (step_Σ_til_Let κ_til.1.1.1 f ae κ_til.1.1.2 κ_til.1.2 κ_til.2 ξ_til.2.1 ξ_til.2.2 x' e' ρ_λ_til H_A_til).
-by pairs.
-
-(*+ membership +*)
-rewrite /step_Σ_til_Let_func //=.
-rewrite (alloc_til_ordering σ_til σ_κ_til ξ_til.2.1 ξ_til.2.2) in H10.
-
-(*
-have: (σ_extend eq_Addr_til σ_til
-                (alloc_til x'
-                   (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2,
-                   (ξ_til.2.1, ξ_til.2.2))) (A_til ae κ_til.1.2 σ_til)) ⊑
-      (σ_extend eq_Addr_til ξ_til.2.1
-           (alloc_til x'
-              (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2,
-              (ξ_til.2.1, ξ_til.2.2))) (A_til ae κ_til.1.2 ξ_til.2.1)).
-rewrite /σ_extend.
-rewrite /substore /subseteq.
-move => a_til clo_til.
-case E: (eq_Addr_til
-         (alloc_til x'
-            (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2,
-            (ξ_til.2.1, ξ_til.2.2))) a_til); try done.
-rewrite /A_til.
-case F: ae => [v|]; try done.
-by move: (H_σ_til (κ_til.1.2 v) clo_til).
-move => H_sub_til.
-*)
-rewrite (alloc_κ_til_ordering σ_til σ_κ_til (σ_extend eq_Addr_til σ_til
-                (alloc_til x'
-                   (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2,
-                   (ξ_til.2.1, ξ_til.2.2))) (A_til ae κ_til.1.2 σ_til))
-                ξ_til.2.1 ξ_til.2.2 (σ_extend eq_Addr_til ξ_til.2.1
-                  (alloc_til x'
-                     (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2,
-                     (ξ_til.2.1, ξ_til.2.2))) (A_til ae κ_til.1.2 ξ_til.2.1))) in H10.
-
-rewrite (σ_extend_ind eq_KAddr_til σ_κ_til ξ_til.2.2) in H10.
-by rewrite H10.
-Qed.
-
-(****)
-
-Lemma step_σ_til {ξ_til} (H_wf: @Ξ_til_wf ξ_til):
-  ξ_til.2.1 ⊑ (step_Ξ_til ξ_til).2.1.
-Proof.
-move => a_til clo_til H_clo_til.
-rewrite /step_Ξ_til; pairs.
-
-move: (Ξ_til_wf_σ H_wf a_til clo_til H_clo_til) =>
-      [c_til [H_c_til [c'_til [H_c'_til]]]]
-      [σ_til [σ_κ_til [σ'_til [σ'_κ_til]]]] //=
-      [H_σ_til [H_σ_κ_til [H_σ'_til [H_σ'_κ_til [H_clo_til' H_step]]]]].
-
-inversion H_step.
-
-(*+ Let +*)
-set ϛ'_til := step_Σ_til_Let_func x f ae b ρ_til a_κ_til ξ_til.2.1 ξ_til.2.2 x' e' ρ_λ_til.
-exists ϛ'_til.
-split.
-right.
-exists c_til.
-split; try done.
-
-(*+= step =+*)
-move: (step_Σ_til_Let x f ae b ρ_til a_κ_til ξ_til.2.1 ξ_til.2.2 x' e' ρ_λ_til (substore_A_til f ρ_til H_σ_til (x', e', ρ_λ_til) H0)).
-by rewrite /ϛ'_til -H /step_Σ_til_Let_func //=; pairs.
-
-(*+= membership =+*)
-move: H_clo_til'.
-rewrite -H4 //= /ϛ'_til //=.
-rewrite -(alloc_til_ordering σ_til σ_κ_til ξ_til.2.1 ξ_til.2.2).
-by move/(substore_σ_extend (substore_A_til ae ρ_til H_σ_til) a_til clo_til).
-
-(*+ Ret +*)
-set ϛ'_til := step_Σ_til_Ret_func ae ρ_til a_κ_til ξ_til.2.1 ξ_til.2.2 x e' ρ_κ_til a'_κ_til.
-exists ϛ'_til.
-split.
-right.
-exists c_til.
-split; try done.
-
-(*+= step =+*)
-move: (step_Σ_til_Ret ae ρ_til a_κ_til ξ_til.2.1 ξ_til.2.2 x e' ρ_κ_til a'_κ_til (H_σ_κ_til a_κ_til (x, e', ρ_κ_til, a'_κ_til) H0)).
-by rewrite /ϛ'_til -H /step_Σ_til_Ret_func; pairs.
-
-(*+= membership =+*)
-move: H_clo_til'.
-rewrite -H4 /ϛ'_til /step_Σ_til_Ret_func //=.
-rewrite (alloc_til_ordering σ_til σ_κ_til ξ_til.2.1 ξ_til.2.2); pairs.
-by move/(substore_σ_extend (substore_A_til ae ρ_til H_σ_til) a_til clo_til).
-Qed.
-
-(****)
-
-Lemma step_til {ξ_til c_til c'_til σ'_til σ'_κ_til} (H_wf: @Ξ_til_wf ξ_til):
-  step_Σ_til (c_til, ξ_til.2) (c'_til, (σ'_til, σ'_κ_til)) ->
-  ξ_til.1 c_til ->
-  (step_Ξ_til ξ_til).1 c'_til /\
-  σ'_til ⊑ (step_Ξ_til ξ_til).2.1 /\ σ'_κ_til ⊑ (step_Ξ_til ξ_til).2.2.
-Proof.
-move => H_step H_c_til.
-rewrite /step_Ξ_til; pairs.
-
-do ?split.
-
-exists σ'_til σ'_κ_til.
-right.
-exists c_til.
-split; try done.
-
-move => a_til clo_til H_clo_til.
-exists (c'_til, (σ'_til, σ'_κ_til)).
-inversion H_step.
-
-split.
-right.
-exists c_til.
-split; try done.
-by rewrite H4 H2 H3 H1.
-by rewrite //= H3.
-
-split.
-right.
-exists c_til.
-split; try done.
-by rewrite H4 H2 H3 H1.
-by rewrite //= H3.
-
-move => a_til clo_til H_clo_til.
-exists (c'_til, (σ'_til, σ'_κ_til)).
-inversion H_step.
-
-split.
-right.
-exists c_til.
-split; try done.
-by rewrite H4 H2 H3 H1.
-by rewrite //= H4.
-
-split.
-right.
-exists c_til.
-split; try done.
-by rewrite H4 H2 H3 H1.
-by rewrite H4 //=.
-Qed.
-
-(****)
-
-Lemma step_stacks {ξ_til} (H_wf: @Ξ_til_wf ξ_til):
-  stacks ξ_til.2.2 ⊑ stacks (step_Ξ_til ξ_til).2.2.
-Proof.
-move => a_κ_til κ_til H_stacks.
-induction H_stacks.
-
-(*+ null +*)
-by constructor.
-
-(*+ cons +*)
-constructor; try done.
-by move: (step_σ_κ_til H_wf a_κ_til κ_til H0).
-Qed.
-
-(****)
-
-Lemma step_path_til {ξ_til} (H_wf : @Ξ_til_wf ξ_til) c_til κs_til:
-  path_til ξ_til c_til κs_til ⊑ path_til (step_Ξ_til ξ_til) c_til κs_til.
-Proof.
-move => c'_til κs'_til.
-elim => [
-  H_c_til H_stacks |
-  x f ae b ρ_pre_til a_κ_pre_til c_pre_til H_c_pre_til κs_pre_til c_mid_til φ'_til
-    IH_no_step IH_step H_κ_til H_step |
-  ae ρ_pre_til a_κ_pre_til κ'_til κs'_pre_til c_mid_til
-     x e' ρ_κ_til a'_κ_til c_pre_til
-     H_c_pre_til IH_no_step IH_step H_κ_til H_step
-].
-(*= nil =*)
-by constructor; [apply: step_r_til | apply: step_stacks].
-
-(*= Let =*)
-apply: (path_til_Let (step_Ξ_til ξ_til) c_til κs_til x f ae b ρ_pre_til a_κ_pre_til c_pre_til).
-by apply: step_r_til.
-by [].
-by apply: step_σ_κ_til.
-move: H_step => [σ_til [σ_κ_til [σ'_til [σ'_κ_til]]]] //=
-                [H_σ_til [H_σ_κ_til [H_σ'_til [H_σ'_κ_til H_step]]]].
-inversion H_step.
-rewrite {H x0 H1 f0 H2 ae0 H3 b0 H4 ρ_til H5 a_κ_til H6 σ_til0 H7 σ_κ_til0} (H9).
-exists σ_til σ_κ_til σ'_til σ'_κ_til.
-do ?split.
-by apply (store_trans H_σ_til (step_σ_til H_wf)).
-by apply (store_trans H_σ_κ_til (step_σ_κ_til H_wf)).
-by apply (store_trans H_σ'_til (step_σ_til H_wf)).
-by apply (store_trans H_σ'_κ_til (step_σ_κ_til H_wf)).
-move: (step_Σ_til_Let x f ae b ρ_pre_til a_κ_pre_til σ_til σ_κ_til x' e' ρ_λ_til H0).
-by rewrite /step_Σ_til_Let_func -H9 -H10.
-
-(*= Ret =*)
-rewrite /c_pre_til /c_mid_til (surjective_pairing ξ_til.2)
-        (alloc_til_ordering ξ_til.2.1 ξ_til.2.2 (step_Ξ_til ξ_til).2.1 (step_Ξ_til ξ_til).2.2); pairs; try done.
-apply: path_til_Ret;
-  try rewrite -/x -/e' -/ρ_κ_til -/a'_κ_til
-        (surjective_pairing (step_Ξ_til ξ_til).2)
-        -(alloc_til_ordering ξ_til.2.1 ξ_til.2.2 (step_Ξ_til ξ_til).2.1 (step_Ξ_til ξ_til).2.2);
-(*        -(alloc_til_ordering (step_σ_til ξ_til _) (step_σ_κ_til ξ_til _));*)
-  pairs;
-  try rewrite -/c_mid_til -/c_pre_til;
-  try done.
-by apply: step_r_til.
-by apply: step_σ_κ_til.
-move: H_step => [σ_til [σ_κ_til [σ'_til [σ'_κ_til]]]] //=
-                [H_σ_til [H_σ_κ_til [H_σ'_til [H_σ'_κ_til H_step]]]].
-inversion H_step.
-rewrite {H ae0 H1 ρ_til H2 a_κ_til H3 σ_til0 H4 σ_κ_til0 H5 e'0}.
-exists σ_til σ_κ_til σ'_til σ'_κ_til.
-do ?split.
-by apply (store_trans H_σ_til (step_σ_til H_wf)).
-by apply (store_trans H_σ_κ_til (step_σ_κ_til H_wf)).
-by apply (store_trans H_σ'_til (step_σ_til H_wf)).
-by apply (store_trans H_σ'_κ_til (step_σ_κ_til H_wf)).
-by exact.
-Qed.
-
-
 (*************************************)
 (********* Well formedness ***********)
 (*************************************)
 
-Lemma step_Ξ_til_wf_c_0 {ξ_til} (H_wf : @Ξ_til_wf ξ_til):
-  (step_Ξ_til ξ_til).1 c_0_til.
+Lemma step_Ξ_til_wf_c_0 {ξ_til ξ'_til} (H_wf : @Ξ_til_wf ξ_til ξ'_til):
+  (step_Ξ_til ξ'_til).1 c_0_til.
 Proof.
 rewrite /step_Ξ_til; pairs.
 exists σ_0_til σ_κ_0_til.
@@ -1822,8 +2045,8 @@ Qed.
 
 (****)
 
-Lemma step_Ξ_til_wf_a_κ_0 {ξ_til} (H_wf : @Ξ_til_wf ξ_til):
-  forall κ_til, ~(step_Ξ_til ξ_til).2.2 a_κ_0_til κ_til.
+Lemma step_Ξ_til_wf_a_κ_0 {ξ_til ξ'_til} (H_wf : @Ξ_til_wf ξ_til ξ'_til):
+  forall κ_til, ~(step_Ξ_til ξ'_til).2.2 a_κ_0_til κ_til.
 Proof.
 move => κ_til.
 rewrite /not /step_Ξ_til; pairs.
@@ -1853,10 +2076,10 @@ Qed.
 
 (****)
 
-Lemma step_Ξ_til_wf_r {ξ_til} (H_wf : @Ξ_til_wf ξ_til):
-  ∀c_til ∈ (step_Ξ_til ξ_til).1,
-  ∃κs_til ∈ stacks (step_Ξ_til ξ_til).2.2 c_til.2,
-    path_til (step_Ξ_til ξ_til) c_0_til nil c_til κs_til.
+Lemma step_Ξ_til_wf_r {ξ_til ξ'_til} (H_wf : @Ξ_til_wf ξ_til ξ'_til):
+  ∀c_til ∈ (step_Ξ_til ξ'_til).1,
+  ∃κs_til ∈ stacks (step_Ξ_til ξ'_til).2.2 c_til.2,
+    path_til ξ'_til (step_Ξ_til ξ'_til) c_0_til nil c_til κs_til.
 Proof.
 rewrite {1}/step_Ξ_til; pairs.
 move => c_til.
@@ -1904,7 +2127,7 @@ by rewrite (eq_bool_correct_true.2 _).
 
 (*+=+= path =+=+*)
 rewrite H2.
-(*+=+=+*) apply: (path_til_Let (step_Ξ_til ξ_til) _ _ _ f ae); rewrite //=.
+(*+=+=+*) apply: (path_til_Let ξ'_til (step_Ξ_til ξ'_til) _ _ _ f ae); rewrite //=.
 
 rewrite /step_Ξ_til; pairs.
 exists σ_til σ_κ_til.
@@ -1912,9 +2135,10 @@ right.
 exists c_pre_til.
 by split; try done.
 
-apply step_path_til; try done.
+apply (step_path_til H_wf); try done.
 by rewrite H.
 
+admit.
 rewrite /step_Ξ_til -H2 //=; pairs.
 exists (c_til, (σ_til, σ_κ_til)).
 split.
@@ -1926,25 +2150,26 @@ by rewrite eq_bool_correct_true.2.
 
 move: (step_σ_κ_til H_wf).
 rewrite -H in H_step.
-exists ξ_til.2.1 ξ_til.2.2 σ_til σ_κ_til.
+exists σ_til σ_κ_til.
 
 rewrite -H in H_c_pre_til.
-(*+=+=+=*) do ?split.
-by apply: step_σ_til.
-by apply: step_σ_κ_til.
+(*+=+=+=*) rewrite //=.
+do ?split.
+admit. (*by apply step_σ_til.*)
+admit. (*by apply step_σ_κ_til.*)
 by move: (step_til H_wf H_step H_c_pre_til).2.1.
-by move: (step_til H_wf H_step H_c_pre_til).2.2.
-by pairs.
+(*by move: (step_til H_wf H_step H_c_pre_til).2.2.
+by pairs.*)
 
 (*+=+ Ret +=+*)
 rewrite //=.
 
-have: ξ_til.2.2 a_κ_til (x, e', ρ_κ_til, a'_κ_til) by rewrite -H1 //=.
+have: ξ'_til.2.2 a_κ_til (x, e', ρ_κ_til, a'_κ_til) by rewrite -H1 //=.
 move => H_a_κ_til.
 
 (* have: κs'_til and a path to call *)
 move: (Ξ_til_wf_σ_κ H_wf a_κ_til (x, e', ρ_κ_til, a'_κ_til) H_a_κ_til).2 => //= [? [? [H_call _]]].
-move: (Ξ_til_wf_r H_wf _ H_call) => //= [κs'_til] [H_κs'_til] H_call_path.
+move: (Ξ_til_wf_r H_wf _ (Ξ_til_wf_r_step H_wf _ H_call)) => //= [κs'_til] [H_κs'_til] H_call_path.
 
 exists κs'_til. (* Use that κs'_til *)
 
@@ -1957,7 +2182,7 @@ by auto.
 
 (*+=+= path =+=+*)
 (* have: stacks ((...) :: κs'_til) *)
-move: (stacks_cons ξ_til.2.2 a_κ_til (x, e', ρ_κ_til, a'_κ_til) κs'_til (Ξ_til_wf_a_κ_0' H_wf H_a_κ_til) H_κs'_til H_a_κ_til) => H_κs_til.
+move: (stacks_cons ξ'_til.2.2 a_κ_til (x, e', ρ_κ_til, a'_κ_til) κs'_til (Ξ_til_wf_a_κ_0' H_wf H_a_κ_til) H_κs'_til H_a_κ_til) => H_κs_til.
 
 (* have a path to entry *)
 move: (Ξ_til_wf_C_Addr H_wf (path_end_til H_path)) => HH.
@@ -1970,44 +2195,53 @@ rewrite C_Addr_til_Addr in H_κs_til.
 rewrite -H in H_path.
 move: (path_from_entry' H_wf H_path _ H_κs_til) => //= H_path_from_entry.
 
-(* have a path to exit in ξ_til and (step_Ξ_til ξ_til) *)
+(* have a path to exit in ξ'_til and (step_Ξ_til ξ'_til) *)
 move: (path_append_til H_path_entry H_path_from_entry) => H_path_exit.
 move: (step_path_til H_wf c_0_til nil _ _ H_path_exit) => H_path_exit'.
 
 (* have a path to return *)
-move: (path_til_Ret (step_Ξ_til ξ_til) c_0_til nil ae ρ_til a_κ_til (x, e', ρ_κ_til, a'_κ_til) κs'_til) => //=.
-rewrite (alloc_til_ordering σ_til0 σ_κ_til0 (step_Ξ_til ξ_til).2.1 (step_Ξ_til ξ_til).2.2); pairs.
+move: (path_til_Ret ξ'_til (step_Ξ_til ξ'_til) c_0_til nil ae ρ_til a_κ_til (x, e', ρ_κ_til, a'_κ_til) κs'_til) => //=.
+
+rewrite -H1.
 apply.
 
-rewrite (surjective_pairing (step_Ξ_til ξ_til).2).
-rewrite (alloc_til_ordering (step_Ξ_til ξ_til).2.1 (step_Ξ_til ξ_til).2.2 σ_til0 σ_κ_til0).
+by rewrite H2; apply (step_til H_wf H_step H_c_pre_til).1.
+
+
+(*rewrite (alloc_til_ordering' H_wf).
+rewrite (alloc_til_ordering σ_til0 σ_κ_til0 (step_Ξ_til ξ'_til).2.1 (step_Ξ_til ξ'_til).2.2); pairs.
+apply.*)
+
+(*
+rewrite (surjective_pairing (step_Ξ_til ξ'_til).2).
+rewrite (alloc_til_ordering (step_Ξ_til ξ'_til).2.1 (step_Ξ_til ξ'_til).2.2 σ_til0 σ_κ_til0).
 rewrite H2.
 by apply (step_til H_wf H_step H_c_pre_til).1.
+*)
 by [].
-by apply (step_σ_κ_til H_wf).
-exists ξ_til.2.1 ξ_til.2.2 σ_til σ_κ_til.
+admit.
+by pairs.
+
+exists σ_til σ_κ_til.
 rewrite //=.
 do ?split.
-by move: (step_σ_til H_wf).
-by move: (step_σ_κ_til H_wf).
 by move: (step_til H_wf H_step H_c_pre_til).2.1.
 by move: (step_til H_wf H_step H_c_pre_til).2.2.
-rewrite (surjective_pairing (step_Ξ_til ξ_til).2).
-rewrite (alloc_til_ordering (step_Ξ_til ξ_til).2.1 (step_Ξ_til ξ_til).2.2 σ_til0 σ_κ_til0).
+
 rewrite H2.
 pairs.
-by rewrite H.
+by rewrite H H1.
 Qed.
 
-Lemma step_Ξ_til_wf_σ {ξ_til} (H_wf : @Ξ_til_wf ξ_til):
-    ∀a_til ↦ clo_til ∈ (step_Ξ_til ξ_til).2.1,
-      ∃c_til ∈ (step_Ξ_til ξ_til).1,
-      ∃c'_til ∈ (step_Ξ_til ξ_til).1,
-        step_Σ_sub_clo_til a_til clo_til (c_til, (step_Ξ_til ξ_til).2) (c'_til, (step_Ξ_til ξ_til).2).
+Lemma step_Ξ_til_wf_σ {ξ_til ξ'_til} (H_wf : @Ξ_til_wf ξ_til ξ'_til):
+    ∀a_til ↦ clo_til ∈ (step_Ξ_til ξ'_til).2.1,
+      ∃c_til ∈ ξ'_til.1,
+      ∃c'_til ∈ (step_Ξ_til ξ'_til).1,
+        step_Σ_sub_clo_til a_til clo_til (c_til, ξ'_til.2) (c'_til, (step_Ξ_til ξ'_til).2).
 Proof.
 move => a_til clo_til.
 rewrite {1}/step_Ξ_til.
-rewrite {1}(surjective_pairing ξ_til) (surjective_pairing ξ_til.2) //=.
+rewrite {1}(surjective_pairing ξ'_til) (surjective_pairing ξ'_til.2) //=.
 pairs.
 move => [ϛ'_til [H_step H_member]].
 
@@ -2041,40 +2275,33 @@ exists c_til.
 by pairs.
 
 (*+=+ step +=+*)
-exists ξ_til.2.1 ξ_til.2.2.
+(*exists ξ'_til.2.1 ξ'_til.2.2.*)
 exists ϛ'_til.2.1 ϛ'_til.2.2.
 
 rewrite //=.
 
 do ?split.
-by move: (step_σ_til H_wf).
-by move: (step_σ_κ_til H_wf).
-rewrite /substore /subseteq /step_Ξ_til; pairs => a'_til clo'_til H_clo'_til.
-exists ϛ'_til.
-split.
-right.
-by exists c_til.
-by [].
-rewrite /substore /subseteq /step_Ξ_til; pairs => a'_κ_til κ_til H_κ_til.
-exists ϛ'_til.
-split.
-right.
-by exists c_til.
-by [].
+
+rewrite (surjective_pairing ϛ'_til) (surjective_pairing ϛ'_til.2) in H_step.
+by move: (step_til H_wf H_step H_c_til).2.1.
+
+rewrite (surjective_pairing ϛ'_til) (surjective_pairing ϛ'_til.2) in H_step.
+by move: (step_til H_wf H_step H_c_til).2.2.
+
 by [].
 by pairs.
 Qed.
 
-Lemma step_Ξ_til_wf_σ_κ {ξ_til} (H_wf : @Ξ_til_wf ξ_til):
-    ∀a_κ_til ↦ κ_til ∈ (step_Ξ_til ξ_til).2.2,
-      ((step_Ξ_til ξ_til).1 (C_Addr_til a_κ_til) /\
+Lemma step_Ξ_til_wf_σ_κ {ξ_til ξ'_til} (H_wf : @Ξ_til_wf ξ_til ξ'_til):
+    ∀a_κ_til ↦ κ_til ∈ (step_Ξ_til ξ'_til).2.2,
+      ((step_Ξ_til ξ'_til).1 (C_Addr_til a_κ_til) /\
        exists f ae,
          let c_call_til := (Let κ_til.1.1.1 f ae κ_til.1.1.2, κ_til.1.2, κ_til.2) in
-         (step_Ξ_til ξ_til).1 c_call_til /\
-         step_Σ_sub_κ_til a_κ_til κ_til (c_call_til, (step_Ξ_til ξ_til).2) (C_Addr_til a_κ_til, (step_Ξ_til ξ_til).2)).
+         ξ'_til.1 c_call_til /\
+         step_Σ_sub_κ_til a_κ_til κ_til (c_call_til, ξ'_til.2) (C_Addr_til a_κ_til, (step_Ξ_til ξ'_til).2)).
 Proof.
 rewrite {1}/step_Ξ_til.
-rewrite {1}(surjective_pairing ξ_til) (surjective_pairing ξ_til.2) //=.
+rewrite {1}(surjective_pairing ξ'_til) (surjective_pairing ξ'_til.2) //=.
 pairs.
 
 move => a_κ_til κ_til [ϛ_til [H H_κ_til]].
@@ -2090,7 +2317,7 @@ move => [c_til [H_c_til H_step]].
 inversion H_step; last first.
 by rewrite -H0 /step_Σ_til_Ret_func //= in H_κ_til.
 
-have: σ_til = ξ_til.2.1 /\ σ_κ_til = ξ_til.2.2.
+have: σ_til = ξ'_til.2.1 /\ σ_κ_til = ξ'_til.2.2.
 by rewrite -H1 //=.
 move => [H_σ_til H_σ_κ_til].
 
@@ -2122,16 +2349,16 @@ exists f ae.
 (*+=+*) split.
 
 (*+=+ membership +=+*)
-by rewrite H_κ_til' //= H; apply step_r_til.
+by rewrite H_κ_til' //= H.
 
 (*+=+ step +=+*)
 rewrite H_κ_til' //=.
 
-exists ξ_til.2.1 ξ_til.2.2 ϛ_til.2.1 ϛ_til.2.2.
+exists (*ξ'_til.2.1 ξ'_til.2.2*) ϛ_til.2.1 ϛ_til.2.2.
 rewrite //= (surjective_pairing ϛ_til) (surjective_pairing ϛ_til.2) //= in H_step *.
 do ?split.
-by move: (step_σ_til H_wf); rewrite /step_Ξ_til //=; pairs.
-by move: (step_σ_κ_til H_wf); rewrite /step_Ξ_til //=; pairs.
+(*by move: (step_σ_til H_wf); rewrite /step_Ξ_til //=; pairs.
+by move: (step_σ_κ_til H_wf); rewrite /step_Ξ_til //=; pairs.*)
 by move: (step_til H_wf H_step H_c_til).2.1.
 by move: (step_til H_wf H_step H_c_til).2.2.
 by rewrite -H_κ_til'.
@@ -2142,9 +2369,11 @@ Qed.
 
 (*** Initial ξ is Well-formed ***)
 
-Lemma Ξ_til_wf_ξ_0: @Ξ_til_wf ξ_0_til.
+Lemma Ξ_til_wf_ξ_0: @Ξ_til_wf ξ_0_til ξ_0_til.
 Proof.
 split; try done; auto.
+
+admit.
 
 move => c_til ->.
 rewrite /ξ_0_til //=.
@@ -2156,28 +2385,33 @@ rewrite //=.
 by constructor.
 Qed.
 
+(*Lemma Ξ_til_wf_ξ' {ξ_til ξ'_til}: @Ξ_til_wf ξ_til*)
+
 (*** Stepping preserves well-formedness ***)
 
-Lemma step_Ξ_til_wf {ξ_til}: @Ξ_til_wf ξ_til -> @Ξ_til_wf (step_Ξ_til ξ_til).
+Lemma step_Ξ_til_wf {ξ_til ξ'_til}: @Ξ_til_wf ξ_til ξ'_til -> @Ξ_til_wf ξ'_til (step_Ξ_til ξ'_til).
 Proof.
 move => H_wf.
+Set Printing Implicit.
 apply: mk_Ξ_til_wf.
-by apply: step_Ξ_til_wf_c_0.
-by apply: step_Ξ_til_wf_a_κ_0.
-by apply: step_Ξ_til_wf_r.
-by apply: step_Ξ_til_wf_σ.
-by apply: step_Ξ_til_wf_σ_κ.
+admit.
+admit.
+by apply: (@step_Ξ_til_wf_c_0 ξ_til ξ'_til).
+by apply: (@step_Ξ_til_wf_a_κ_0 ξ_til ξ'_til).
+by apply: (@step_Ξ_til_wf_r ξ_til ξ'_til).
+by apply: (@step_Ξ_til_wf_σ ξ_til ξ'_til).
+by apply: (@step_Ξ_til_wf_σ_κ ξ_til ξ'_til).
 Qed.
 
 (*****************************************)
 (*** Taking a step preserves precision ***)
 (*****************************************)
 
-Lemma step_prec_Store {ξ_hat ξ_til}:
+Lemma step_prec_Store {ξ_hat ξ_til ξ'_til}:
   step_Ξ_hat ξ_hat = ξ_hat ->
-  @Ξ_til_wf ξ_til ->
-  prec_Ξ ξ_hat ξ_til ->
-  prec_Store ξ_hat.2 (step_Ξ_til ξ_til).2.1.
+  @Ξ_til_wf ξ_til ξ'_til ->
+  prec_Ξ ξ_hat ξ'_til ->
+  prec_Store ξ_hat.2 (step_Ξ_til ξ'_til).2.1.
 Proof.
 move => H_fix H_wf H_prec.
 move => a_hat a_til H_prec_Addr clo_hat clo_til H_prec_Clo.
@@ -2227,8 +2461,11 @@ by rewrite -H1 -H //= in H_stacks.
 set κ_til := (x, e', ρ_κ_til, a'_κ_til).
 move: (Ξ_til_wf_σ_κ H_wf a_κ_til (x, e', ρ_κ_til, a'_κ_til)).
 rewrite -H1 //= => HH.
-move: {HH} (HH H2).2 => [? [? HH]].
-move: {HH} (Ξ_til_wf_r H_wf _ HH.1) => //= [κs'_til [H_κs'_til _]].
+move: {HH} (HH H2).2 => [x_ [x1_ HH]].
+have: ξ'_til.1 (Let x x_ x1_ e', ρ_κ_til, a'_κ_til).
+admit.
+move => HH1'.
+move: {HH} (Ξ_til_wf_r H_wf _ HH1') => //= [κs'_til [H_κs'_til _]].
 
 set ϛ_hat := step_Σ_hat_Ret_func ae (Env_til_hat ρ_til) ξ_hat.2 x e' (Env_til_hat ρ_κ_til) (Konts_til_hat κs'_til).
 
@@ -2261,7 +2498,7 @@ apply substore_σ_extend_til_hat; try done.
 rewrite -H1 //= in H_prec.
 by move: H_prec.2.
 apply stacks_cons.
-have: ξ_til.2.2 a_κ_til (x, e', ρ_κ_til, a'_κ_til) by rewrite -H1.
+have: ξ'_til.2.2 a_κ_til (x, e', ρ_κ_til, a'_κ_til) by rewrite -H1.
 by move/(Ξ_til_wf_a_κ_0' H_wf).
 by rewrite -H1 in H_κs'_til.
 by rewrite -H -H1 in H_stacks.
@@ -2269,11 +2506,11 @@ Qed.
 
 (****)
 
-Lemma step_prec_R {ξ_hat ξ_til}:
+Lemma step_prec_R {ξ_hat ξ_til ξ'_til}:
   step_Ξ_hat ξ_hat = ξ_hat ->
-  @Ξ_til_wf ξ_til ->
-  prec_Ξ ξ_hat ξ_til ->
-  prec_R ξ_hat (step_Ξ_til ξ_til).
+  @Ξ_til_wf ξ_til ξ'_til ->
+  prec_Ξ ξ_hat ξ'_til ->
+  prec_R ξ_hat (step_Ξ_til ξ'_til).
 Proof.
 move => H_fix H_wf H_prec.
 move => c_til H_c_til κs_til.
@@ -2290,19 +2527,22 @@ Qed.
 
 Inductive iterated: Ξ_til -> Prop :=
 | iterated_null: iterated ξ_0_til
-| iterated_cons {ξ_til}: iterated ξ_til -> iterated (step_Ξ_til ξ_til).
+| iterated_cons {ξ'_til}: iterated ξ'_til -> iterated (step_Ξ_til ξ'_til).
 
-Lemma iterated_wf {ξ_til}: iterated ξ_til -> @Ξ_til_wf ξ_til.
+Lemma iterated_wf {ξ'_til}: iterated ξ'_til -> exists ξ_til, @Ξ_til_wf ξ_til ξ'_til.
 Proof.
 elim.
 
+exists ξ_0_til.
 by move: Ξ_til_wf_ξ_0.
 
-clear ξ_til => ξ_til H_iterated H_wf.
+clear ξ'_til.
+move => ξ'_til H_iterated [ξ_til H_wf].
+exists ξ'_til.
 by move: (step_Ξ_til_wf H_wf).
 Qed.
 
-Theorem iterated_prec {ξ_hat ξ_til}: step_Ξ_hat ξ_hat = ξ_hat -> iterated ξ_til -> prec_Ξ ξ_hat ξ_til.
+Theorem iterated_prec {ξ_hat ξ'_til}: step_Ξ_hat ξ_hat = ξ_hat -> iterated ξ'_til -> prec_Ξ ξ_hat ξ'_til.
 Proof.
 move => H_fix.
 elim.
@@ -2328,8 +2568,8 @@ by left.
 by rewrite /σ_0_til in H_clo_til.
 
 (*+ iterated_cons +*)
-clear ξ_til => ξ_til H_iterated H_prec.
-move: (iterated_wf H_iterated) => H_wf.
+clear ξ'_til => ξ'_til H_iterated H_prec.
+move: (iterated_wf H_iterated) => [? H_wf].
 split.
 by move: (step_prec_R H_fix H_wf H_prec).
 by move: (step_prec_Store H_fix H_wf H_prec).
