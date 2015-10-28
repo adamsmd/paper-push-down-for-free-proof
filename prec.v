@@ -41,6 +41,30 @@ relf_True
 (*** Utilities ***)
 (*****************)
 
+Ltac make_set :=
+repeat match goal with
+| [H  : (?X = ?Y) |- _] =>
+  set (make_set_tmp := Y);
+  rewrite <- H in * |- *;
+  clear H;
+  clear X;
+  rename make_set_tmp into X
+| [H  : (?Y = ?X) |- _] =>
+  set (make_set_tmp := Y);
+  rewrite <- H in * |- *;
+  clear H;
+  clear X;
+  rename make_set_tmp into X
+end.
+
+Ltac clear_unused :=
+repeat match goal with
+| [H : (?X = ?Y) |- _] => clear H X
+| [H : (?X = ?Y) |- _] => clear H Y
+end.
+
+(* Proof with try pairs; solve [done]. *)
+
 (** Pairs **)
 Ltac pairs :=
 repeat match goal with
@@ -56,6 +80,12 @@ repeat match goal with
 | [ |- context[(fst ?X, snd ?X)]] => rewrite -(surjective_pairing X)
 end.
 
+Ltac pairs' :=
+match goal with
+| [ H : (?X,?Y) = ?Z |- _] => let l := fresh H "_left" in let r := fresh H "_right" in (have: X = Z.1 by rewrite -H //=); (have: Y = Z.2 by rewrite -H //=); clear H; move => r l
+end.
+
+
 
 (** Equality **)
 Definition eq_dec A := forall x y : A, {x = y} + {x <> y}.
@@ -64,22 +94,11 @@ match e x y with
 | left _ => true
 | right _ => false
 end.
-Lemma eq_bool_correct_true {A : Set} {e} {x y : A} :
-  eq_bool e x y = true <-> x = y.
-Proof with try pairs; solve [done].
-rewrite /eq_bool; by case: (e x y)...
-Qed.
-Lemma eq_bool_correct_false {A : Set} {e} {x y : A} :
-  eq_bool e x y = false <-> x <> y.
-Proof.
-rewrite /eq_bool; by case: (e x y).
-Qed.
+
 Lemma eq_bool_correct {A : Set} {e} {x y : A} :
   (eq_bool e x y = true <-> x = y) /\ (eq_bool e x y = false <-> x <> y).
 Proof.
-split.
-apply: eq_bool_correct_true.
-apply: eq_bool_correct_false.
+split; rewrite /eq_bool; by case: (e x y).
 Qed.
 
 (** Sets **)
@@ -686,7 +705,7 @@ Proof.
 rewrite /step_Σ_til_Let_func /σ_extend /eq_KAddr_til //=.
 case E: (eq_bool _ _); try done.
 move => _.
-rewrite -(eq_bool_correct_true.1 E).
+rewrite -(eq_bool_correct.1.1 E).
 by rewrite C_Addr_til_inj //=.
 Qed.
 
@@ -856,10 +875,10 @@ rewrite /σ_extend /eq_Addr_til /eq_Addr_hat.
 case E: (eq_bool _ _ _); try done.
 case F: (eq_bool _ _ _); try done.
 by apply substore_A_til_hat.
-move: (eq_bool_correct_false.1 F).
+move: (eq_bool_correct.2.1 F).
 rewrite (prec_alloc x' (e, Env_til_hat ρ_til, Konts_til_hat κs_til, σ_hat)
                        (e, ρ_til, a_κ_til, (σ_til, σ_κ_til))); try done.
-rewrite (eq_bool_correct_true.1 E).
+rewrite (eq_bool_correct.1.1 E).
 by auto.
 exists κs_til.
 split; try done.
@@ -1980,7 +1999,7 @@ move => [c_til [_]] H_step.
 (*+= Let =+*)
 rewrite /step_Σ_til_Let_func //= /σ_extend /eq_KAddr_til.
 case E: (eq_bool _ _ _).
-move: (eq_bool_correct_true.1 E).
+move: (eq_bool_correct.1.1 E).
 by move/alloc_κ_0_til.
 by [].
 
@@ -2037,7 +2056,7 @@ right.
 by exists c_pre_til.
 
 rewrite -H4 //= /σ_extend /eq_KAddr_til.
-by rewrite (eq_bool_correct_true.2 _).
+by rewrite (eq_bool_correct.1.2 _).
 
 (*+=+= path =+=+*)
 rewrite H2.
@@ -2060,7 +2079,7 @@ right.
 exists c_pre_til.
 by split; try done.
 rewrite //= -H4 /σ_extend /eq_KAddr_til.
-by rewrite eq_bool_correct_true.2.
+by rewrite eq_bool_correct.1.2.
 
 move: (step_σ_κ_til H_wf).
 rewrite -H in H_step.
