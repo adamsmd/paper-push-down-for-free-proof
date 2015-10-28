@@ -2263,10 +2263,21 @@ by move: (fix_contains_step H_fix H_step_hat (path_end_hat IH)).2.
 rewrite /C_til_hat -H8 //= /compose //= /Frame_til_hat H7 //=.
 rewrite (alloc_til_ordering' H_wf H); try done.
 (*rewrite (alloc_til_ordering σ_sub_til σ_κ_sub_til ξ'_til.2.1 ξ'_til.2.2).*)
-rewrite (ρ_extend_til_hat _ _ _ κs_til) //= /C_til_hat //=.
-admit. (* NEEDS alloc_hat_ordering
-rewrite (alloc_hat_ordering 
-by rewrite (alloc_hat_ordering (Store_til_hat ξ'_til.2.1) ξ_hat.2). *)
+suff: ρ_extend (Env_til_hat ρ_λ_til) x'
+                     (alloc_hat x'
+                        (Let x f ae b, Env_til_hat ρ_mid_til,
+                        Konts_til_hat κs_til, ξ_hat.2)) =
+      Env_til_hat (ρ_extend ρ_λ_til x' (alloc_til x' (c_mid_til, ξ'_til.2))).
+by move => <-.
+
+apply: functional_extensionality => x''.
+rewrite /Env_til_hat /ρ_extend /eq_Var.
+
+case E: (eq_bool _ _ _); try done.
+apply: prec_alloc; try done.
+rewrite //=.
+exists κs_til.
+split; try done.
 by move: (paths_have_stacks H_wf H_path_til).
 
 rewrite -H8 //= /ρ_extend /eq_Var eq_bool_correct.1.2; try done.
@@ -2318,13 +2329,22 @@ by apply (fix_contains_step H_fix H_step_hat (path_end_hat IH)).2.
 (*+= step +=*)
 rewrite /C_til_hat //=.
 rewrite (alloc_til_ordering' H_wf H); try done.
-rewrite (ρ_extend_til_hat _ _ _ (κ'_til :: κs_til)).
-rewrite /c_mid_til /C_til_hat //= H_κ'_til /compose /Frame_til_hat //=.
-move: (prec_Store_bij.2).
-admit. (* NEEDS alloc_hat_ordering
-by rewrite (alloc_hat_ordering (Store_til_hat ξ'_til.2.1) ξ_hat.2).*)
-(*move: (paths_have_stacks H_wf H_path_til) => //=.*)
+suff: ρ_extend (Env_til_hat ρ_κ_til) x
+                     (alloc_hat x
+                        (Ret ae, Env_til_hat ρ_mid_til,
+                        (x, e', Env_til_hat ρ_κ_til) :: Konts_til_hat κs_til,
+                        ξ_hat.2)) =
+      Env_til_hat (ρ_extend ρ_κ_til x (alloc_til x (c_mid_til, ξ'_til.2))).
+by move => <-.
+
+apply: functional_extensionality => x''.
+rewrite /Env_til_hat /ρ_extend /eq_Var.
+
+case E: (eq_bool _ _ _); try done.
+apply: prec_alloc; try done.
 rewrite //=.
+exists (κ'_til :: κs_til).
+split; try done.
 by move: (paths_have_stacks H_wf H_path_til).
 by rewrite /c_til //= /ρ_extend /eq_Var eq_bool_correct.1.2.
 (* END HAVE *)
