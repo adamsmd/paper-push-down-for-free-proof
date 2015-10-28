@@ -735,6 +735,7 @@ move => ->.
 by rewrite /Clo_til_hat Env_bij.2.
 Qed.
 
+(*
 (****)
 
 Lemma ρ_extend_til_hat ϛ_til x ρ_λ_til κs_til:
@@ -751,6 +752,7 @@ by exists κs_til.
 by move: (prec_Store_bij.2 ϛ_til.2.1).
 by rewrite /Env_til_hat.
 Qed.
+*)
 
 (*
 Lemma σ_extend_til_hat σ_til x' ϛ_til d_til κs_til:
